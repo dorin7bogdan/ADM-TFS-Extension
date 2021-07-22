@@ -37,9 +37,9 @@ namespace PSModule
         [Parameter(Position = 9)]
         public bool EnableFailedTestsReport { get; set; }
 
-        protected override void CollateResults(string resultFile, string log, string resdir)
+        protected override bool CollateResults(string resultFile, string log, string resdir)
         {
-            //do nothing here. Collate results should be made by the standard "Copy and Publish Artifacts" TFS task
+            return true; //do nothing here. Collate results should be made by the standard "Copy and Publish Artifacts" TFS task
         }
 
         public override Dictionary<string, string> GetTaskProperties()
