@@ -32,6 +32,7 @@ namespace PSModule
         private const string ARTIFACT_TYPE = "artifactType";
         private const string REPORT_NAME = "reportName";
         private const string ARCHIVE_NAME = "archiveName";
+        private const string ENABLE_FAILED_TESTS_RPT = "enableFailedTestsReport";
         private const string YES = "yes";
         private const string JUNIT_REPORT_XML = "junit_report.xml";
 
@@ -133,7 +134,7 @@ namespace PSModule
                             reportFolders.Add(item.ReportPath);
                     }
 
-                    if (runType == RunType.FileSystem && reportFolders.Any())
+                    if (runType == RunType.FileSystem && reportFolders.Any() && properties[ENABLE_FAILED_TESTS_RPT] == YES)
                     {
                         //run junit report converter
                         string outputFileReport = Path.Combine(resdir, JUNIT_REPORT_XML);

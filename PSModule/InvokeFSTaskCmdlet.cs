@@ -34,6 +34,9 @@ namespace PSModule
         [Parameter(Position = 8)]
         public string BuildNumber { get; set; }
 
+        [Parameter(Position = 9)]
+        public bool EnableFailedTestsReport { get; set; }
+
         protected override void CollateResults(string resultFile, string log, string resdir)
         {
             //do nothing here. Collate results should be made by the standard "Copy and Publish Artifacts" TFS task
@@ -61,6 +64,7 @@ namespace PSModule
             builder.SetStorageAccount(StorageAccount);
             builder.SetContainer(Container);
             builder.SetBuildNumber(BuildNumber);
+            builder.SetEnableFailedTestsReport(EnableFailedTestsReport);
 
             return builder.GetProperties();
         }

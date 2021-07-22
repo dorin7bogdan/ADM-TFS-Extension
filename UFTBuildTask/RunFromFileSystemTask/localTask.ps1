@@ -8,6 +8,7 @@ $timeOutIn = Get-VstsInput -Name 'timeOutIn'
 $uploadArtifact = Get-VstsInput -Name 'uploadArtifact' -Require
 $artifactType = Get-VstsInput -Name 'artifactType'
 $rptFileName = Get-VstsInput -Name 'reportFileName'
+[bool]$enableFailedTestsRpt = Get-VstsInput -Name 'enableFailedTestsReport' -AsBool
 
 $uftworkdir = $env:UFT_LAUNCHER
 $buildNumber = $env:BUILD_BUILDNUMBER
@@ -162,7 +163,7 @@ if ($rerunIdx) {
 
 #---------------------------------------------------------------------------------------------------
 #Run the tests
-Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber -Verbose 
+Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt -Verbose 
 
 if ($testPathInput.Contains(".mtb")) { #batch file with multiple tests
 	$XMLfile = $testPathInput
