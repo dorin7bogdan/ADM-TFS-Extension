@@ -54,7 +54,7 @@ namespace PSModule
         private const string HDR_FONT_WEIGHT_BOLD_MIN_WIDTH_800 = "font-weight:bold;min-width:800px";
         private const string FONT_WEIGHT_BOLD = "font-weight:bold;";
         private const string FONT_WEIGHT_BOLD_UNDERLINE = "font-weight:bold; text-decoration:underline;";
-        private const string BUILD_STATUS_IMG_STYLE = "width:35%;vertical-align:middle;";
+        private const string BUILD_STATUS_IMG_STYLE = "width:50%;vertical-align:middle;";
 
         private const string UFT_REPORT_CAPTION = "UFT Report";
         private const string RUN_SUMMARY = "Run Summary";
