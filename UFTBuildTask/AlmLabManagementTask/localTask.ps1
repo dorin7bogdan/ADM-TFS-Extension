@@ -47,21 +47,21 @@ if ($rerunIdx) {
 		try {
 			Remove-Item $runSummary -ErrorAction Stop
 		} catch {
-			Write-Error $_
+			Write-Error "Cannot rerun because the file '$runSummary' is currently in use."
 		}
 	}
 	if (Test-Path $uftReport) {
 		try {
 			Remove-Item $uftReport -ErrorAction Stop
 		} catch {
-			Write-Error $_
+			Write-Error "Cannot rerun because the file '$uftReport' is currently in use."
 		}
 	}
 	if (Test-Path $failedTests) {
 		try {
 			Remove-Item $failedTests -ErrorAction Stop
 		} catch {
-			Write-Error $_
+			Write-Error "Cannot rerun because the file '$failedTests' is currently in use."
 		}
 	}
 }
