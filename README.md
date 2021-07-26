@@ -16,14 +16,14 @@ In a build step, run UFT One tests stored in the local file system or on an ALM 
 
 #### Setup
 1. From [Visual Studio Marketplace][marketplace]: Install the **UFT One Azure DevOps extension** for the relevant organization
-2. On our [GitHub][repository]: Navigate to a specific release (latest: **1.1.0**)
+2. On our [GitHub][repository]: Navigate to a specific release (latest: **2.0.0**)
 3. From [Azure DevOps][azure-devops]: Navigate to **agent pools** and set up an agent (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip & unpack.ps1)    
 4.2. Run the *unpack.ps1* script    
 
 # Extension Functionality
-##### Run from File System
+##### UFT One File System Run
 - Use this task to run tests located in your file system by specifying the tests' names, folders that contain tests, or an MTBX file (code sample below).
 ``` xml 
 <Mtbx>
@@ -35,15 +35,15 @@ In a build step, run UFT One tests stored in the local file system or on an ALM 
 ```
 - More information is available [here][fs-docs]
 
-##### Run from ALM
+##### UFT One ALM Run
 - Use this task to run tests located on an ALM server, to which you can connect using SSO or a username and password.
 - More information is available [here][alm-docs]
 
-##### Run from ALM Lab Management
+##### UFT One ALM Lab Management Run
 - Use this task to run ALM server-side functional test sets.
 - More information is available [here][alm-lab-docs]
 
-##### ALM Lab Environment Preparation
+##### UFT One ALM Lab Environment Preparation
 - Use this task to assign values to AUT Environment Configurations located in ALM.
 - More information is available [here][alm-env-docs]
 #
