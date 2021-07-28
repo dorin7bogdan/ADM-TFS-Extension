@@ -1,7 +1,7 @@
 # Integration with UFT One
 This extension enables you to run UFT One tests as part of your Azure DevOps build process. In a build step, run UFT One tests stored in the local file system or on an ALM server. When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running. After the build is complete, you can view comprehensive test results. 
-#
-# What's new in  Azure DevOps extension - version 2.0.0
+
+# What's new in  Azure DevOps extension - version 2.0.3
 ##### Release date: July 2021
 - Upload your tests results into Azure Portal containers and have them available after each individual build run
 - View run metrics and failure details
@@ -9,8 +9,7 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 - UFT One ALM Lab Management task improvement
 - The "Failed Tests" report is generated as part of the run, without the need to add a *PublishTestResults* task (File System Run only)
 - Bug fixes
-#
-#
+
 #  Configuration
 #### Prerequisites
 - UFT One (version  >=**14.00**)
@@ -20,7 +19,7 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 
 #### Setup
 1. Install this extension for the relevant Azure DevOps organization
-2. From our [GitHub][repository]: Browse a specific **release** (latest: 2.0.0)
+2. From our [GitHub][repository]: Browse a specific **release** (latest: 2.0.3)
 3. From [Azure DevOps][azure-devops]: Have an agent set up (interactive or run as a service) 
 4. On your agent machine:
 4.1. Download the resources provided by a specific release (UFT.zip, unpack.ps1 and optionally the .vsix file)
@@ -30,8 +29,7 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 6. On your agent machine:
 6.1. Install [Azure Powershell] [azure-powershell]
 6.2. Connect to [Azure Portal][azure-connect]
-#
-#
+
 # Extension Functionality
 ##### UFT One File System Run
 - Use this task to run tests located in your file system by specifying the tests' names, folders that contain tests, or an MTBX file (code sample below).
@@ -56,8 +54,7 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 ##### UFT One ALM Lab Environment Preparation
 - Use this task to assign values to AUT Environment Configurations located in ALM.
 - More information is available [here][alm-env-docs]
-#
-#
+
 # Additional Resources
 For assistance or more information on configuring and using this extension, please consult the following resources:
 - [GitHub repository][repository]
