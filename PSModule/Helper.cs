@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Xml;
@@ -20,8 +21,9 @@ namespace PSModule
         internal const string ERROR = "error";
         internal const string WARNING = "warning";
         private const string DIEZ = "#";
-        private const char DASH = '-';
+        private const string TEST_REPORT_NAME_PATTERN_SUFFIX = @" - Report[\d]*$";
         private const char COLON = ':';
+        private const string PACKAGE = "package";
         private const string NAME = "name";
         private const string REPORT = "report";
         private const string STATUS = "status";
@@ -74,8 +76,8 @@ namespace PSModule
                 string testName = string.Empty;
                 if (isJUnitReport)
                 {
-                    string currentTest = node.Attributes[NAME].Value;
-                    testName = currentTest.Substring(currentTest.LastIndexOf(DASH) + 1);
+                    string currentTestAndReportName = node.Attributes[PACKAGE].Value;
+                    testName = Regex.Replace(currentTestAndReportName, TEST_REPORT_NAME_PATTERN_SUFFIX, string.Empty);
                 }
 
                 foreach (XmlNode currentNode in node) //inside <testcase> nodes
