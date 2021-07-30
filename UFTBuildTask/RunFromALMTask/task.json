@@ -1,5 +1,5 @@
 ﻿{
-  "id": "A571AE7C-E100-42E1-8CED-498B46029773",
+  "id": "A571AE7C-E100-42E1-8CED-498B46029772",
   "name": "RunFromALMTask",
   "friendlyName": "UFT One ALM Run",
   "description": "Run UFT One tests from ALM",
@@ -12,7 +12,7 @@
   "version": {
     "Major": 2,
     "Minor": 0,
-    "Patch": 0
+    "Patch": 3
   },
   "helpUrl": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-alm.htm",
   "demands": [
