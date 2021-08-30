@@ -2,7 +2,7 @@
 	"manifestVersion": 1,
 	"id": "UFT-Azure-extension",
 	"name": "UFT One Azure DevOps extension",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"publisher": "uftpublisher",
 	"targets": [{
 		"id": "Microsoft.VisualStudio.Services",
@@ -122,17 +122,6 @@
 			],
 			"properties": {
 				"name": "RunFromALMTask"
-			}
-		},
-		{
-			"id": "my-hub",
-			"type": "ms.vss-web.hub",
-			"targets": [
-				"ms.vss-code-web.code-hub-group"
-			],
-			"properties": {
-				"name": "My Hub",
-				"uri": "my-hub.html"
 			}
 		},
 		{
