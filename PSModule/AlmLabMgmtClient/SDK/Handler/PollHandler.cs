@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Handler
 {
-    using C = Constants;
     public abstract class PollHandler : HandlerBase
     {
         private readonly int _interval = 5000; // millisecond
@@ -24,20 +23,21 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
 
         public async Task<bool> Poll()
         {
-            _logger.LogInfo($"Start Polling... Run ID: {_runId}");
+            await _logger.LogInfo($"Start Polling... Run ID: {_runId}");
             return await DoPoll();
         }
 
         protected virtual async Task<bool> DoPoll()
         {
-            bool ok = false;
+            bool ok = false, logRequestUrl = true;
+
             int failures = 0;
             while (failures < 3)
             {
-                var res = await GetResponse();
+                var res = await GetResponse(logRequestUrl);
                 if (res.IsOK)
                 {
-                    await LogProgress();
+                    await LogProgress(logRequestUrl);
                     if (IsFinished(res))
                     {
                         ok = true;
@@ -46,7 +46,8 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
                     }
                     else
                     {
-                        _logger.ShowProgress(C.DOT);
+                        await _logger.ShowProgress();
+                        logRequestUrl = false;
                     }
                 }
                 else
@@ -66,7 +67,7 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
 
         protected abstract bool IsFinished(Response response);
 
-        protected abstract Task<Response> GetResponse();
+        protected abstract Task<Response> GetResponse(bool logRequestUrl);
 
         protected void Sleep()
         {
@@ -86,7 +87,7 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
             _logger.LogError($"Polling try failed. Status code: {res.StatusCode}, Error: {res.Error ?? "Not Available"}");
         }
 
-        protected abstract Task LogProgress();
+        protected abstract Task LogProgress(bool logRequestUrl);
 
     }
 }

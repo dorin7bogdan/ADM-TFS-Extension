@@ -12,13 +12,14 @@ namespace PSModule.AlmLabMgmtClient.SDK.Request
 
         protected virtual string QueryString => null;
 
-        public async override Task<Response> Perform()
+        public async override Task<Response> Perform(bool logRequestUrl = true)
         {
             return await _client.HttpGet(
                     Url,
                     Headers,
                     ResourceAccessLevel.PROTECTED,
-                    QueryString);
+                    QueryString,
+                    logRequestUrl);
         }
     }
 }

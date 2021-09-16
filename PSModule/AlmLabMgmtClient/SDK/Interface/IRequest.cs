@@ -4,6 +4,6 @@ namespace PSModule.AlmLabMgmtClient.SDK.Interface
 {
     public interface IRequest
     {
-        Task<Response> Execute();
+        Task<Response> Execute(bool logRequestUrl = true);
     }
 }

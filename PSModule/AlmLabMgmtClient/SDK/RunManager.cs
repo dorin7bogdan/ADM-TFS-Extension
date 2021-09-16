@@ -6,6 +6,7 @@ using PSModule.AlmLabMgmtClient.SDK.Handler;
 using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Util;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK
@@ -17,6 +18,7 @@ namespace PSModule.AlmLabMgmtClient.SDK
         private readonly PollHandler _pollHandler;
         private bool _isRunning = false;
         private bool _isPolling = false;
+        private bool _isLoggedIn = false;
         private readonly ILogger _logger;
 
         private readonly RestClient _client;
@@ -38,8 +40,8 @@ namespace PSModule.AlmLabMgmtClient.SDK
             TestSuites res = null;
             _isRunning = true;
             var authHandler = AuthManager.Instance;
-            bool ok = await authHandler.Authenticate(_client, _args.Username, _args.Password, _args.ClientType);
-            if (ok)
+            _isLoggedIn = await authHandler.Authenticate(_client, _args.Username, _args.Password, _args.ClientType);
+            if (_isLoggedIn)
             {
                 if (await Start())
                 {
@@ -52,6 +54,7 @@ namespace PSModule.AlmLabMgmtClient.SDK
                     _isPolling = false;
                 }
                 await authHandler.Logout(_client);
+                _isLoggedIn = false;
             }
             _isRunning = false;
 
@@ -80,13 +83,13 @@ namespace PSModule.AlmLabMgmtClient.SDK
             if (hasSucceeded)
             {
                 string reportUrl = await _runHandler.ReportUrl(_args);
-                _logger.LogInfo($"{_args.RunType} run report for run id {_runHandler.RunId} is at: {reportUrl}");
+                await _logger.LogInfo($"{_args.RunType} run report for run id {_runHandler.RunId} is at: {reportUrl}");
             }
             else
             {
                 string errMsg = $"Failed to prepare timeslot for run. No entity of type {_args.RunType} with id {_args.EntityId} exists.";
                 string note = "Note: You can run only functional test sets and build verification suites using this task. Check to make sure that the configured ID is valid (and that it is not a performance test ID).";
-                _logger.LogError($"{errMsg}{Environment.NewLine}{note}");
+                await _logger.LogError($"{errMsg}{Environment.NewLine}{note}");
             }
         }
 
@@ -125,10 +128,26 @@ namespace PSModule.AlmLabMgmtClient.SDK
 
         public async Task Stop()
         {
-            _logger.LogInfo("Stopping run...");
-            if (_runHandler != null)
+            if (_runHandler != null && _isRunning)
             {
-                await _runHandler.Stop();
+                try
+                {
+                    await _logger.LogInfo("Stopping run...");
+                    if (_isLoggedIn)
+                    {
+                        await AuthManager.Instance.Logout(_client);
+                        _isLoggedIn = false;
+                    }
+                    await _runHandler.Stop();
+                }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    await _logger.LogError(e.Message);
+                }
                 _isRunning = false;
                 _isPolling = false;
             }

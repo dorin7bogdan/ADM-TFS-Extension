@@ -13,7 +13,6 @@ namespace PSModule.AlmLabMgmtClient.SDK.Util
         public const string ONE = "1";
         public const char EQUAL = '=';
         public const char SEMICOLON = ';';
-        public const char DOT = '.';
         public const char LINE_FEED = '\n';
     }
 }

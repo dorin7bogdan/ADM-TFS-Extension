@@ -1,6 +1,7 @@
 using PSModule.AlmLabMgmtClient.SDK.Interface;
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Request
@@ -18,23 +19,27 @@ namespace PSModule.AlmLabMgmtClient.SDK.Request
             _logger = _client.Logger;
         }
 
-        public async Task<Response> Execute()
+        public async Task<Response> Execute(bool logRequestUrl = true)
         {
             Response res;
             try
             {
-                res = await Perform();
+                res = await Perform(logRequestUrl);
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                await _logger.LogError(ex.Message);
                 res = new Response(ex.Message);
             }
 
             return res;
         }
 
-        public abstract Task<Response> Perform();
+        public abstract Task<Response> Perform(bool logRequestUrl = true);
 
         protected virtual string Suffix => null;
 

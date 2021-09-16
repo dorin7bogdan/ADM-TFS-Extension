@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK
@@ -29,13 +30,13 @@ namespace PSModule.AlmLabMgmtClient.SDK
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
         }
 
-        public RestClient(string serverUrl, string domain, string project, string username, ILogger logger)
+        public RestClient(string serverUrl, string domain, string project, string username, ILogger logger = null)
         {
             _serverUrl = new Uri(serverUrl);
             _username = username;
             _restPrefix = new Uri(_serverUrl.AppendSuffix($"rest/domains/{domain}/projects/{project}"));
             _webuiPrefix = new Uri(_serverUrl.AppendSuffix($"webui/alm/{domain}/{project}"));
-            _logger = logger;
+            _logger = logger ?? new ConsoleLogger();
 
             _xsrfTokenValue = Guid.NewGuid().ToString();
             _cookies.Add(XSRF_TOKEN, _xsrfTokenValue);
@@ -55,7 +56,7 @@ namespace PSModule.AlmLabMgmtClient.SDK
 
         public string BuildWebUIEndpoint(string suffix) => _webuiPrefix.AppendSuffix(suffix);
 
-        public async Task<Response> HttpGet(string url, WebHeaderCollection headers = null, ResourceAccessLevel resourceAccessLevel = ResourceAccessLevel.PUBLIC, string query = "")
+        public async Task<Response> HttpGet(string url, WebHeaderCollection headers = null, ResourceAccessLevel resourceAccessLevel = ResourceAccessLevel.PUBLIC, string query = "", bool logRequestUrl = true)
         {
             Response res = null;
             using (var client = new WebClient { Headers = headers })
@@ -65,7 +66,10 @@ namespace PSModule.AlmLabMgmtClient.SDK
                     if (!query.IsNullOrWhiteSpace())
                         url += $"?{query}";
 
-                    //_logger.Info($"GET {url}");
+                    if (logRequestUrl)
+                    {
+                        await _logger.LogInfo($"GET {url}");
+                    }
 
                     DecorateRequestHeaders(client, resourceAccessLevel);
                     string data = await client.DownloadStringTaskAsync(url);
@@ -74,9 +78,13 @@ namespace PSModule.AlmLabMgmtClient.SDK
                     res = new Response(data, client.ResponseHeaders, HttpStatusCode.OK);
                     UpdateCookies(client);
                 }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
+                }
                 catch (WebException we)
                 {
-                    _logger.LogError(we.Message);
+                    await _logger.LogError(we.Message);
                     //PrintHeaders(client);
                     if (we.Response is HttpWebResponse resp)
                         return new Response(we.Message, resp.StatusCode);
@@ -85,22 +93,24 @@ namespace PSModule.AlmLabMgmtClient.SDK
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e.Message);
+                    await _logger.LogError(e.Message);
                     //PrintHeaders(client);
                     res = new Response(e.Message);
                 }
             }
-
             return res;
         }
 
-        public async Task<Response> HttpPost(string url, WebHeaderCollection headers = null, string body = null, ResourceAccessLevel resourceAccessLevel = ResourceAccessLevel.PUBLIC)
+        public async Task<Response> HttpPost(string url, WebHeaderCollection headers = null, string body = null, ResourceAccessLevel resourceAccessLevel = ResourceAccessLevel.PUBLIC, bool logRequestUrl = true)
         {
             Response res;
             using var client = new WebClient { Headers = headers };
             try
             {
-                _logger.LogInfo($"POST {url}");
+                if (logRequestUrl)
+                {
+                    await _logger.LogInfo($"POST {url}");
+                }
                 DecorateRequestHeaders(client, resourceAccessLevel);
                 string data = await client.UploadStringTaskAsync(url, body);
                 //PrintHeaders(client);
@@ -108,9 +118,13 @@ namespace PSModule.AlmLabMgmtClient.SDK
                 res = new Response(data, client.ResponseHeaders, HttpStatusCode.OK);
                 UpdateCookies(client);
             }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (WebException we)
             {
-                _logger.LogError(we.Message);
+                await _logger.LogError(we.Message);
                 //PrintHeaders(client);
                 if (we.Response is HttpWebResponse resp)
                     return new Response(we.Message, resp.StatusCode);
@@ -119,11 +133,10 @@ namespace PSModule.AlmLabMgmtClient.SDK
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                await _logger.LogError(e.Message);
                 //PrintHeaders(client);
                 res = new Response(e.Message);
             }
-
             return res;
         }
 

@@ -1,6 +1,7 @@
 using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Request;
 using PSModule.AlmLabMgmtClient.SDK.Util;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Handler
@@ -42,15 +43,14 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
             return ok;
         }
 
-        protected override async Task<Response> GetResponse()
+        protected override async Task<Response> GetResponse(bool logRequestUrl)
         {
-
-            return await new PollAlmLabMgmtRunRequest(_client, _runId).Execute();
+            return await new PollAlmLabMgmtRunRequest(_client, _runId).Execute(logRequestUrl);
         }
 
-        protected async override Task LogProgress()
+        protected async override Task LogProgress(bool logRequestUrl)
         {
-            await _eventLogHandler.Log();
+            await _eventLogHandler.Log(logRequestUrl);
         }
 
         protected override bool IsFinished(Response response)
@@ -67,6 +67,10 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
                     _logger.LogInfo($"Timeslot {_timeslotId} is [{currentRunState}].\nRun start time: [{startTime}], Run end time: [{endTime}]");
                     ret = true;
                 }
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch
             {
@@ -87,6 +91,10 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
                 string completedSuccessfully = Xml.GetAttributeValue(xml, COMPLETED_SUCCESSFULLY);
                 _logger.LogInfo($"Run state of {_runId}: {state}, Completed successfully: {completedSuccessfully}");
                 ok = true;
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch
             {
@@ -115,6 +123,10 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
             {
                 string xml = response.ToString();
                 id = Xml.GetAttributeValue(xml, RESERVATION_ID);
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch
             {

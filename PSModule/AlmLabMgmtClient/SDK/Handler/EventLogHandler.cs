@@ -3,6 +3,7 @@ using PSModule.AlmLabMgmtClient.SDK.Request;
 using PSModule.AlmLabMgmtClient.SDK.Util;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Handler
@@ -21,27 +22,32 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
             _timeslotId = timeslotId;
         }
 
-        public async Task<bool> Log()
+        public async Task<bool> Log(bool logRequestUrl)
         {
             bool ok = false;
             Response eventLog = null;
             try
             {
-                eventLog = await GetEventLog();
+                eventLog = await GetEventLog(logRequestUrl);
                 string xml = eventLog.ToString();
                 var entities = Xml.ToEntities(xml);
                 foreach (var currEntity in entities)
                 {
                     if (IsNew(currEntity))
                     {
-                        _logger.LogInfo($"{currEntity[CREATION_TIME]}:{currEntity[DESCRIPTION]}");
+                        await _logger.LogInfo($"{currEntity[CREATION_TIME]}:{currEntity[DESCRIPTION]}");
                     }
                 }
                 ok = true;
             }
+            catch(ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to print Event Log: {eventLog} (run id: {_runId}, reservation id: {_timeslotId}). Cause: {ex.Message}");
+                await _logger.LogError($"Failed to print Event Log: {eventLog} (run id: {_runId}, reservation id: {_timeslotId}). Cause: {ex.Message}");
+
             }
 
             return ok;
@@ -60,9 +66,9 @@ namespace PSModule.AlmLabMgmtClient.SDK.Handler
             return isNew;
         }
 
-        private async Task<Response> GetEventLog()
+        private async Task<Response> GetEventLog(bool logRequestUrl)
         {
-            return await new EventLogRequest(_client, _timeslotId).Execute();
+            return await new EventLogRequest(_client, _timeslotId).Execute(logRequestUrl);
         }
     }
 }

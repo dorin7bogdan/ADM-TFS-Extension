@@ -4,6 +4,7 @@ using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Request;
 using PSModule.AlmLabMgmtClient.SDK.Util;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.Result
@@ -27,12 +28,16 @@ namespace PSModule.AlmLabMgmtClient.Result
                 }
                 else
                 {
-                    _logger.LogError($"Failed to get Entity name. Exception: {response.Error}");
+                    await _logger.LogError($"Failed to get Entity name. Exception: {response.Error}");
                 }
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                await _logger.LogError(e.Message);
             }
 
             return name;

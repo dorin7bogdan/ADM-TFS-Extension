@@ -1,6 +1,7 @@
 using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Request;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Util
@@ -21,6 +22,10 @@ namespace PSModule.AlmLabMgmtClient.SDK.Util
                     url = client.ServerUrl.AppendSuffix($"ui/?redirected&p={domain}/{project}&execution-report#!/test-set-report/{runId}");
                 else
                     url = client.ServerUrl.AppendSuffix($"ui/?redirected&p={domain}/{project}&execution-report#/test-set-report/{runId}");
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch (Exception e)
             {

@@ -23,11 +23,11 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
                 { HttpRequestHeader.Accept, C.APP_JSON}
             };
 
-            client.Logger.LogInfo("Start login to ALM server with APIkey...");
+            await client.Logger.LogInfo("Start login to ALM server with APIkey...");
 
             var res = await client.HttpPost(client.ServerUrl.AppendSuffix(APIKEY_LOGIN_API), headers, body);
             bool ok = res.IsOK;
-            client.Logger.LogInfo(ok ? $"Logged in successfully to ALM Server {client.ServerUrl} using clientId [{clientId}]"
+            await client.Logger.LogInfo(ok ? $"Logged in successfully to ALM Server {client.ServerUrl} using clientId [{clientId}]"
                                   : $"Login to ALM Server at {client.ServerUrl} failed. Status Code: [{res.StatusCode}]");
             return ok;
         }

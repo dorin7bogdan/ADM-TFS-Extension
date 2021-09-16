@@ -10,6 +10,7 @@ using System;
 using PSModule.AlmLabMgmtClient.SDK;
 using AlmLabMgmtClient.SDK.Request;
 using AlmLabMgmtClient.SDK.Util;
+using System.Threading;
 
 namespace PSModule.AlmLabMgmtClient.Result
 {
@@ -63,6 +64,10 @@ namespace PSModule.AlmLabMgmtClient.Result
                 {
                     _logger.LogInfo($"Parse TestInstanceRuns from response XML got no result. Response: {response}");
                 }
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

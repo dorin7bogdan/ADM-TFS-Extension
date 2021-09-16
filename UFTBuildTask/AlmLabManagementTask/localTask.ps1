@@ -11,6 +11,7 @@ $varRunType = Get-VstsInput -Name 'varRunType'
 $varEntityId = Get-VstsInput -Name 'varTestSet' -Require
 $varDescription = Get-VstsInput -Name 'varDescription'
 $varTimeslotDuration = Get-VstsInput -Name 'varTimeslotDuration' -Require
+$varClientType = Get-VstsInput -Name 'varClientType'
 $varReportName = Get-VstsInput -Name 'varReportName'
 
 $uftworkdir = $env:UFT_LAUNCHER
@@ -61,8 +62,7 @@ if ($rerunIdx) {
 	}
 }
 
-$CDA1 = [bool]($varUseCDA) 
-Invoke-AlmLabManagementTask $varAlmServ $varUserName $varPass $varDomain $varProject $varRunType $varEntityId $varDescription $varTimeslotDuration $varEnvironmentConfigurationID $varReportName $buildNumber -Verbose
+Invoke-AlmLabManagementTask $varAlmServ $varUserName $varPass $varDomain $varProject $varRunType $varEntityId $varDescription $varTimeslotDuration $varEnvironmentConfigurationID $varReportName $buildNumber $varClientType -Verbose
 
 #---------------------------------------------------------------------------------------------------
 # uploads report files to build artifacts

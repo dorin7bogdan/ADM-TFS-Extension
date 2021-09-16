@@ -3,6 +3,7 @@ using PSModule.AlmLabMgmtClient.SDK.Util;
 using System;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -35,16 +36,20 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
                     ok = await AppendQCSessionCookies(client, clientType);
                 return ok;
             }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                client.Logger.LogError(e.Message);
+                await client.Logger.LogError(e.Message);
                 return false;
             }
         }
 
         private async Task<bool> AppendQCSessionCookies(IClient client, string clientType)
         {
-            client.Logger.LogInfo("Creating session...");
+            await client.Logger.LogInfo("Creating session...");
             var headers = new WebHeaderCollection
             {
                 { HttpRequestHeader.ContentType, C.APP_XML },
@@ -57,7 +62,7 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
                 headers,
                 $"<session-parameters><client-type>{clientType}</client-type></session-parameters>");
             bool ok = res.IsOK;
-            client.Logger.LogInfo(ok ? "Session created." : $"Cannot append QCSession cookies. Error: {res.Error}");
+            await client.Logger.LogInfo(ok ? "Session created." : $"Cannot append QCSession cookies. Error: {res.Error}");
             return ok;
         }
 
@@ -71,7 +76,7 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
                 Response response = await client.HttpGet(client.ServerUrl.AppendSuffix(LOGOUT_ENDPOINT));
                 isLoggedOut = response.IsOK;
                 if (isLoggedOut)
-                    client.Logger.LogInfo(LOGGED_OUT_SUCCESSFULLY);
+                    await client.Logger.LogInfo(LOGGED_OUT_SUCCESSFULLY);
             }
             return isLoggedOut;
         }
@@ -85,7 +90,7 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
             Response response = await client.HttpGet(client.ServerUrl.AppendSuffix(AUTH_ENDPOINT), headers);
 
             bool ok = response.IsOK;
-            client.Logger.LogInfo(ok ? $"Logged in successfully to ALM Server {client.ServerUrl} using username [{username}]"
+            await client.Logger.LogInfo(ok ? $"Logged in successfully to ALM Server {client.ServerUrl} using username [{username}]"
                                  : $"Login to ALM Server at {client.ServerUrl} failed. Status Code: {response.StatusCode}");
             return ok;
         }
@@ -93,14 +98,14 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
         private async Task<bool> IsAuthenticated(IClient client, string username)
         {
             bool ok = false;
-            client.Logger.LogInfo(CHECK_IF_AUTHENTICATED);
+            await client.Logger.LogInfo(CHECK_IF_AUTHENTICATED);
             string isAuthUrl = client.ServerUrl.AppendSuffix(IS_AUTH_ENDPOINT);
             using var webclient = new WebClient { Headers = new WebHeaderCollection { { HttpRequestHeader.Accept, C.APP_XML } } };
             var res = await client.HttpGet(isAuthUrl, new WebHeaderCollection { { HttpRequestHeader.Accept, C.APP_XML } });
             if (res.IsOK)
             {
                 string xml = res.Data;
-                client.Logger.LogInfo(xml);
+                await client.Logger.LogInfo(xml);
                 //check the xml response
                 try
                 {
@@ -109,14 +114,18 @@ namespace PSModule.AlmLabMgmtClient.SDK.Auth
                     if (uname == username)
                         ok = true;
                     else
-                        client.Logger.LogError($"Username mismatch: Expected: {username}, Received: {uname}");
+                        await client.Logger.LogError($"Username mismatch: Expected: {username}, Received: {uname}");
+                }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
                 }
                 catch (Exception e)
                 {
-                    client.Logger.LogError(e.Message);
+                    await client.Logger.LogError(e.Message);
                     //PrintHeaders(client);
                 }
-                client.Logger.LogError($"Is Authenticated = {ok}");
+                await client.Logger.LogError($"Is Authenticated = {ok}");
             }
             return ok;
         }

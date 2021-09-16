@@ -1,49 +1,34 @@
 ﻿using PSModule.AlmLabMgmtClient.SDK.Interface;
 using System;
-using System.Management.Automation;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace PSModule.AlmLabMgmtClient.SDK.Util
 {
-    using C = Constants;
     public class ConsoleLogger : ILogger
     {
-        private bool _printLineFeed = true;
-        private readonly object _sync = new object();
-        public void LogInfo(string msg)
+        private readonly static char[] DOTs = new string('.', 100).ToCharArray();
+        private int _count = 0;
+        public async Task LogInfo(string msg)
         {
-            lock(_sync)
-            {
-                if (_printLineFeed)
-                {
-                    Console.Write(C.LINE_FEED);
-                    _printLineFeed = false;
-                }
-                Console.WriteLine(msg);
-            }
+            await Console.Out.WriteLineAsync(msg);
+            if (_count > 0)
+                _count = 0;
         }
 
-        public void LogError(string err, ErrorCategory categ = ErrorCategory.NotSpecified, bool isCritical = false, [CallerMemberName] string methodName = "")
+        public async Task LogError(string err, [CallerMemberName] string methodName = "")
         {
-            lock (_sync)
-            {
-                if (_printLineFeed)
-                {
-                    Console.Write(C.LINE_FEED);
-                    _printLineFeed = false;
-                }
-                Console.WriteLine(err);
-            }
+            await Console.Error.WriteLineAsync($"{methodName}: {err}");
+            if (_count > 0)
+                _count = 0;
         }
 
-        public void ShowProgress(char @char)
+        public async Task ShowProgress()
         {
-            lock (_sync)
-            {
-                Console.Write(@char);
-                if (!_printLineFeed)
-                    _printLineFeed = true;
-            }
+            if (_count == DOTs.Length)
+                _count = 0;
+
+            await Console.Out.WriteLineAsync(DOTs, 0, ++_count);
         }
     }
 }

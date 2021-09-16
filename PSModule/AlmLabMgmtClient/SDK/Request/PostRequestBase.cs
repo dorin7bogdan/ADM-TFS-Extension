@@ -20,13 +20,14 @@ namespace PSModule.AlmLabMgmtClient.SDK.Request
                 { X_XSRF_TOKEN, _client.XsrfTokenValue }
             };
 
-        public async override Task<Response> Perform()
+        public async override Task<Response> Perform(bool logRequestUrl = true)
         {
             return await _client.HttpPost(
                     Url,
                     Headers,
                     GetXmlData(),
-                    ResourceAccessLevel.PROTECTED);
+                    ResourceAccessLevel.PROTECTED,
+                    logRequestUrl);
         }
 
         private string GetXmlData()

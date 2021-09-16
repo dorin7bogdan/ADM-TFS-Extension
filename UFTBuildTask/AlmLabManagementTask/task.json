@@ -104,6 +104,14 @@
       "helpMarkDown": "To find the ID of your environment configuration, right-click the entity, copy the URL, and paste it to a text editor. Use the number associated with the EntityID at the end of the URL"
     },
     {
+      "name": "varClientType",
+      "type": "string",
+      "label": "Client Type",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Client type is required for some ALM above 12.60 in authentication."
+    },
+    {
       "name": "varReportName",
       "type": "string",
       "label": "Report Name",

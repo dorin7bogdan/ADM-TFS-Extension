@@ -175,6 +175,10 @@ namespace PSModule
                     }
 
                 }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
+                }
                 catch (Exception e)
                 {
                     result = false;
@@ -231,7 +235,10 @@ namespace PSModule
 
                 return launcher.ExitCode;
             }
-
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
                 WriteError(new ErrorRecord(e, nameof(ThreadInterruptedException), ErrorCategory.InvalidData, "ThreadInterruptedException target"));
@@ -286,9 +293,13 @@ namespace PSModule
 
                // return launcher.ExitCode;
             }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                WriteError(new ErrorRecord(e, nameof(ThreadInterruptedException), ErrorCategory.InvalidData, "ThreadInterruptedException target"));
+                WriteError(new ErrorRecord(e, $"{e.GetType()}", ErrorCategory.InvalidData, $"{nameof(RunConverter)} target"));
                // return -1;
             }
         }
@@ -324,9 +335,13 @@ namespace PSModule
                 using StreamWriter file = new StreamWriter(retCodeFilename, true);
                 file.WriteLine(retCode.ToString());
             }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                WriteError(new ErrorRecord(e, string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(e, $"{e.GetType()}", ErrorCategory.WriteError, string.Empty));
             }
         }
 
@@ -347,13 +362,13 @@ namespace PSModule
 
             if (reportFileName.IsNullOrWhiteSpace())
             {
-                WriteError(new ErrorRecord(new Exception("Collate results, empty reportFileName "), string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(new Exception("Collate results, empty reportFileName "), string.Empty, ErrorCategory.WriteError, nameof(CollateResults)));
                 return false;
             }
 
             if ((resultFile.IsNullOrWhiteSpace() || !File.Exists(resultFile)) && log.IsNullOrWhiteSpace())
             {
-                WriteError(new ErrorRecord(new FileNotFoundException($"No results file ({resultFile}) nor result log provided"), string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(new FileNotFoundException($"No results file ({resultFile}) nor result log provided"), string.Empty, ErrorCategory.WriteError, nameof(CollateResults)));
                 return false;
             }
 
@@ -362,7 +377,7 @@ namespace PSModule
 
             if (xml.IsNullOrWhiteSpace())
             {
-                WriteError(new ErrorRecord(new FileNotFoundException("Empty results file"), string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(new FileNotFoundException("Empty results file"), string.Empty, ErrorCategory.WriteError, nameof(CollateResults)));
                 return false;
             }
             else
@@ -372,13 +387,17 @@ namespace PSModule
                     var doc = XDocument.Parse(xml);
                     if (doc?.Root == null || !doc.Root.HasElements)
                     {
-                        WriteError(new ErrorRecord(new FileNotFoundException("Empty results file"), string.Empty, ErrorCategory.WriteError, string.Empty));
+                        WriteError(new ErrorRecord(new FileNotFoundException("Empty results file"), string.Empty, ErrorCategory.WriteError, nameof(CollateResults)));
                         return false;
                     }
                 }
+                catch (ThreadInterruptedException)
+                {
+                    throw;
+                }
                 catch (Exception e)
                 {
-                    WriteError(new ErrorRecord(e, "Invalid XML format of the results file", ErrorCategory.WriteError, string.Empty));
+                    WriteError(new ErrorRecord(e, "Invalid XML format of the results file", ErrorCategory.WriteError, nameof(CollateResults)));
                     return false;
                 }
             }
@@ -388,7 +407,7 @@ namespace PSModule
                 links = GetRequiredLinksFromString(log);
                 if (links.IsNullOrEmpty())
                 {
-                    WriteError(new ErrorRecord(new FileNotFoundException("No report links in results file or log found"), string.Empty, ErrorCategory.WriteError, string.Empty));
+                    WriteError(new ErrorRecord(new FileNotFoundException("No report links in results file or log found"), string.Empty, ErrorCategory.WriteError, nameof(CollateResults)));
                     return false;
                 }
             }
@@ -402,9 +421,13 @@ namespace PSModule
                     file.WriteLine($"[Report {link.Item2}]({link.Item1})  ");
                 }
             }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                WriteError(new ErrorRecord(e, "Error writing the results", ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(e, $"{e.GetType()}", ErrorCategory.WriteError, nameof(CollateResults)));
                 return false;
             }
             return true;
@@ -434,9 +457,13 @@ namespace PSModule
                     match2 = match2.NextMatch();
                 }
             }
+            catch(ThreadInterruptedException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
-                WriteError(new ErrorRecord(e, string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(e, $"{e.GetType()}", ErrorCategory.WriteError, nameof(GetRequiredLinksFromString)));
             }
             return results;
         }
