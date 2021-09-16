@@ -21,14 +21,14 @@ namespace PSModule
         private const string HpToolsLauncher_EXE = "HpToolsLauncher.exe";
         private const string HpToolsAborter_EXE = "HpToolsAborter.exe";
         private const string ReportConverter_EXE = "ReportConverter.exe";
-        private const string UFT_LAUNCHER = "UFT_LAUNCHER";
-        private const string PROPS = "props";
-        private const string BUILD_NUMBER = "buildNumber";
-        private const string DDMMYYYYHHMMSSSSS = "ddMMyyyyHHmmssSSS";
-        private const string RESULTS_FILENAME = "resultsFilename";
+        protected const string UFT_LAUNCHER = "UFT_LAUNCHER";
+        protected const string PROPS = "props";
+        protected const string BUILD_NUMBER = "buildNumber";
+        protected const string DDMMYYYYHHMMSSSSS = "ddMMyyyyHHmmssSSS";
+        protected const string RESULTS_FILENAME = "resultsFilename";
         private const string STORAGE_ACCOUNT = "storageAccount";
         private const string CONTAINER = "container";
-        private const string RUN_TYPE = "runType";
+        protected const string RUN_TYPE = "runType";
         private const string UPLOAD_ARTIFACT = "uploadArtifact";
         private const string ARTIFACT_TYPE = "artifactType";
         private const string REPORT_NAME = "reportName";
@@ -39,7 +39,7 @@ namespace PSModule
 
         #endregion
 
-        private readonly StringBuilder _launcherConsole = new StringBuilder();
+        protected readonly StringBuilder _launcherConsole = new StringBuilder();
         private readonly ConcurrentQueue<string> outputToProcess = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<string> errorToProcess = new ConcurrentQueue<string>();
 
@@ -106,13 +106,13 @@ namespace PSModule
                 if (hasResults)
                 {
                     var listReport = H.ReadReportFromXMLFile(resultsFileName, false, out _);
-                    string storageAccount = properties.GetValueOrDefault(STORAGE_ACCOUNT, string.Empty);
-                    string container = properties.GetValueOrDefault(CONTAINER, string.Empty);
 
                     var runType = (RunType)Enum.Parse(typeof(RunType), properties[RUN_TYPE]);
                     //create html report
                     if (runType == RunType.FileSystem && properties[UPLOAD_ARTIFACT] == YES)
                     {
+                        string storageAccount = properties.GetValueOrDefault(STORAGE_ACCOUNT, string.Empty);
+                        string container = properties.GetValueOrDefault(CONTAINER, string.Empty);
                         var artifactType = (ArtifactType)Enum.Parse(typeof(ArtifactType), properties[ARTIFACT_TYPE]);
                         H.CreateSummaryReport(resdir, runType, listReport, true, artifactType, storageAccount, container, properties[REPORT_NAME], properties[ARCHIVE_NAME]);
                     }
@@ -161,7 +161,7 @@ namespace PSModule
             }
         }
 
-        private bool SaveProperties(string paramsFile, Dictionary<string, string> properties)
+        protected bool SaveProperties(string paramsFile, Dictionary<string, string> properties)
         {
             bool result = true;
 
@@ -347,7 +347,7 @@ namespace PSModule
 
             if (reportFileName.IsNullOrWhiteSpace())
             {
-                WriteError(new ErrorRecord(new Exception("collate results, empty reportFileName "), string.Empty, ErrorCategory.WriteError, string.Empty));
+                WriteError(new ErrorRecord(new Exception("Collate results, empty reportFileName "), string.Empty, ErrorCategory.WriteError, string.Empty));
                 return false;
             }
 

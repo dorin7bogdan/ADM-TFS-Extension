@@ -7,16 +7,11 @@ $varUserName = Get-VstsInput -Name 'varUserName' -Require
 $varPass = Get-VstsInput -Name 'varPass'
 $varDomain = Get-VstsInput -Name 'varDomain' -Require
 $varProject = Get-VstsInput -Name 'varProject' -Require
-$varRunType = "TEST_SET" 
-$varTestSet = Get-VstsInput -Name 'varTestSet' -Require
+$varRunType = Get-VstsInput -Name 'varRunType'
+$varEntityId = Get-VstsInput -Name 'varTestSet' -Require
 $varDescription = Get-VstsInput -Name 'varDescription'
 $varTimeslotDuration = Get-VstsInput -Name 'varTimeslotDuration' -Require
-$varEnvironmentConfigurationID = Get-VstsInput -Name 'varEnvironmentConfigurationID'
 $varReportName = Get-VstsInput -Name 'varReportName'
-$varUseCDA = Get-VstsInput -Name 'varUseCDA'
-$varDeploymentAction = Get-VstsInput -Name 'varDeploymentAction'
-$varDeploymentEnvironmentName = Get-VstsInput -Name 'varDeploymentEnvironmentName'
-$varDeprovisioningAction = Get-VstsInput -Name 'varDeprovisioningAction'
 
 $uftworkdir = $env:UFT_LAUNCHER
 $buildNumber = $env:BUILD_BUILDNUMBER
@@ -67,7 +62,7 @@ if ($rerunIdx) {
 }
 
 $CDA1 = [bool]($varUseCDA) 
-Invoke-AlmLabManagementTask $varAlmServ $varUserName $varPass $varDomain $varProject $varRunType $varTestSet $varDescription $varTimeslotDuration $varEnvironmentConfigurationID $varReportName $CDA1 $varDeploymentAction $varDeploymentEnvironmentName $varDeprovisioningAction $buildNumber -Verbose
+Invoke-AlmLabManagementTask $varAlmServ $varUserName $varPass $varDomain $varProject $varRunType $varEntityId $varDescription $varTimeslotDuration $varEnvironmentConfigurationID $varReportName $buildNumber -Verbose
 
 #---------------------------------------------------------------------------------------------------
 # uploads report files to build artifacts
