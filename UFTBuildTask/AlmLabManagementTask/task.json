@@ -18,13 +18,6 @@
   "demands": [
     "UFT_LAUNCHER"
   ],
-  "groups": [
-    {
-      "name": "useCDAGroup",
-      "displayName": "CDA Properties",
-      "isExpanded": false
-    }
-  ],
   "inputs": [
     {
       "name": "varAlmServ",
@@ -67,12 +60,24 @@
       "helpMarkDown": "The ALM project in which the tests to run are stored"
     },
     {
+      "name": "varRunType",
+      "type": "radio",
+      "label": "Run Type",
+      "defaultValue": "TEST_SET",
+      "required": false,
+      "helpMarkDown": "The run mode (Suite run or Build Verification Suite) to use when running the test",
+      "options": {
+        "TEST_SET": "Test set",
+        "BVS": "Build verification suite"
+      }
+    },
+    {
       "name": "varTestSet",
       "type": "string",
-      "label": "Test Set ID",
+      "label": "Test Set/Build Verification Suite ID",
       "defaultValue": "",
       "required": true,
-      "helpMarkDown": "The ID number (found in ALM) for the test set"
+      "helpMarkDown": "The ID number (found in ALM) for the test set or build verification suite"
     },
     {
       "name": "varDescription",
@@ -80,7 +85,7 @@
       "label": "Description",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": "The description of this test set"
+      "helpMarkDown": "The description of this test set/build verification suite"
     },
     {
       "name": "varTimeslotDuration",
@@ -88,7 +93,7 @@
       "label": "Timeslot Duration (in minutes, minimum = 30)",
       "defaultValue": "",
       "required": true,
-      "helpMarkDown": "The amount of time needed on the host to run this test set"
+      "helpMarkDown": "The amount of time needed on the host to run this test set/verification suite"
     },
     {
       "name": "varEnvironmentConfigurationID",
@@ -99,57 +104,20 @@
       "helpMarkDown": "To find the ID of your environment configuration, right-click the entity, copy the URL, and paste it to a text editor. Use the number associated with the EntityID at the end of the URL"
     },
     {
+      "name": "varClientType",
+      "type": "string",
+      "label": "Client Type",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Client type is required for some ALM above 12.60 in authentication."
+    },
+    {
       "name": "varReportName",
       "type": "string",
       "label": "Report Name",
       "defaultValue": "",
       "required": false,
       "helpMarkDown": "The name of the file containing the ALM report link"
-    },
-    {
-      "name": "varUseCDA",
-      "type": "boolean",
-      "label": "Use CDA for provisioning and deployment",
-      "groupName": "useCDAGroup",
-      "defaultValue": "false",
-      "required": false,
-      "helpMarkDown": "Use ALM CDA servers for deployment of the tests"
-    },
-    {
-      "name": "varDeploymentAction",
-      "type": "pickList",
-      "label": "Deployment Action",
-      "defaultValue": "Use Deployed",
-      "groupName": "useCDAGroup",
-      "required": false,
-      "helpMarkDown": "The action to perform on deploying the server for running tests",
-      "options": {
-        "Use Deployed": "Use Deployed",
-        "Provision and Deploy": "Provision and Deploy",
-        "Redeploy": "Redeploy"
-      }
-    },
-    {
-      "name": "varDeploymentEnvironmentName",
-      "type": "string",
-      "label": "Deployed Environment Name",
-      "defaultValue": "",
-      "groupName": "useCDAGroup",
-      "required": false,
-      "helpMarkDown": "The name of environment on which you are deploying the server"
-    },
-    {
-      "name": "varDeprovisioningAction",
-      "type": "pickList",
-      "label": "Deprovisioning Action",
-      "defaultValue": "Leave environment deployed",
-      "groupName": "useCDAGroup",
-      "required": false,
-      "helpMarkDown": "The action to perform after the testing run when you are ready to end the server deployment",
-      "options": {
-        "Leave environment deployed": "Leave environment deployed",
-        "Deprovision at end": "Deprovision end"
-      }
     }
   ],
   "instanceNameFormat": "Run From ALM Lab Management",

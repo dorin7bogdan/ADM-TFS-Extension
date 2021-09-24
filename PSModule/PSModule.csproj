@@ -11,7 +11,6 @@
     <AssemblyName>PSModule</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>8.0</LangVersion>
-    <Nullable>enable</Nullable>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
@@ -70,6 +69,59 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AbstractLauncherTaskCmdlet.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\LabPublisher.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\Error.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\Failure.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\JUnitTestCaseStatus.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\Properties.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\Property.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\TestCase.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\TestSuite.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Model\TestSuites.cs" />
+    <Compile Include="AlmLabMgmtClient\Result\Publisher.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Auth\ApiKeyAuthenticator.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Auth\AuthManager.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Auth\RestAuthenticator.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Client\RestClient.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Factory\PollHandlerFactory.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Factory\RunHandlerFactory.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\BvsRunHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\EventLogHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\HandlerBase.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\LabPollHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\PollHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\RunHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Handler\TestSetRunHandler.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Interface\IAuthenticator.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Interface\IClient.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Interface\ILogger.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Interface\IRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\EventLogRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetAlmVersionRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetLabRunEntityDataRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetLabRunEntityTestSetRunsRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetRequestBase.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\GetRunEntityNameRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\PollAlmLabMgmtRunRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\PostRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\PostRequestBase.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\RequestBase.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\StartRunEntityRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Request\StopEntityRequest.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Response\Response.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Response\RunResponse.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\RunManager.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\AlmException.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\AlmRunReportUrlBuilder.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\AlmVersion.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\Args.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\ConsoleLogger.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\Constants.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\JUnitParser.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\ResourceAccessLevel.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\StringValue.cs" />
+    <Compile Include="AlmLabMgmtClient\SDK\Util\Xml.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Enums.cs" />

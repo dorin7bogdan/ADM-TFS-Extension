@@ -1,10 +1,9 @@
-﻿using PSModule.Models;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Management.Automation;
 
 namespace PSModule
 {
+    using C = AlmLabMgmtClient.SDK.Util.Constants;
     [Cmdlet(VerbsLifecycle.Invoke, "RunFromAlmTask")]
     public class InvokeRunFromALMTaskCmdlet : AbstractLauncherTaskCmdlet
     {
@@ -88,7 +87,7 @@ namespace PSModule
             if (!string.IsNullOrEmpty(ALMTestSet))
             {
                 int i = 1;
-                foreach (string testSet in ALMTestSet.Split('\n'))
+                foreach (string testSet in ALMTestSet.Split(C.LINE_FEED))
                 {
                     builder.SetTestSet(i++, testSet.Replace(@"\",@"\\"));
                 }
