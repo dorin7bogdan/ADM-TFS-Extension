@@ -8,13 +8,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using PSModule.AlmLabMgmtClient.Result.Model;
 using PSModule.AlmLabMgmtClient.SDK;
-using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Util;
 
 namespace PSModule
 {
     using C = Constants;
-    using H = Helper;
 
     [Cmdlet(VerbsLifecycle.Invoke, "AlmLabManagementTask")]
     public class InvokeAlmLabManagementTaskCmdlet : AbstractLauncherTaskCmdlet
@@ -22,40 +20,49 @@ namespace PSModule
         [Parameter(Position = 0, Mandatory = true)]
         public string ALMServerPath { get; set; }
 
-        [Parameter(Position = 1, Mandatory = true)]
-        public string ALMUserName { get; set; }
+        [Parameter(Position = 1, Mandatory = false)]
+        public bool IsSSO { get; set; }
 
         [Parameter(Position = 2)]
-        public string ALMPassword { get; set; }
+        public string ClientID { get; set; }
 
-        [Parameter(Position = 3, Mandatory = true)]
-        public string ALMDomain { get; set; }
+        [Parameter(Position = 3)]
+        public string ApiKeySecret { get; set; }
 
-        [Parameter(Position = 4, Mandatory = true)]
-        public string ALMProject { get; set; }
+        [Parameter(Position = 4)]
+        public string ALMUserName { get; set; }
 
         [Parameter(Position = 5)]
-        public string TestRunType { get; set; }
+        public string ALMPassword { get; set; }
 
         [Parameter(Position = 6, Mandatory = true)]
+        public string ALMDomain { get; set; }
+
+        [Parameter(Position = 7, Mandatory = true)]
+        public string ALMProject { get; set; }
+
+        [Parameter(Position = 8)]
+        public string TestRunType { get; set; }
+
+        [Parameter(Position = 9, Mandatory = true)]
         public string ALMEntityId { get; set; }
 
-        [Parameter(Position = 7)]
+        [Parameter(Position = 10)]
         public string Description { get; set; }
 
-        [Parameter(Position = 8, Mandatory = true)]
+        [Parameter(Position = 11, Mandatory = true)]
         public string TimeslotDuration { get; set; }
 
-        [Parameter(Position = 9)]
+        [Parameter(Position = 12)]
         public string EnvironmentConfigurationID { get; set; }
 
-        [Parameter(Position = 10)]
+        [Parameter(Position = 13)]
         public string ReportName { get; set; }
 
-        [Parameter(Position = 11)]
+        [Parameter(Position = 14)]
         public string BuildNumber { get; set; }
 
-        [Parameter(Position = 12)]
+        [Parameter(Position = 15)]
         public string ClientType { get; set; }
 
         protected override string GetReportFilename()
@@ -69,6 +76,9 @@ namespace PSModule
 
             builder.SetRunType(RunType.AlmLabManagement);
             builder.SetAlmServerUrl(ALMServerPath);
+            builder.SetSSOEnabled(IsSSO);
+            builder.SetClientID(ClientID);
+            builder.SetApiKeySecret(ApiKeySecret);
             builder.SetAlmUserName(ALMUserName);
             builder.SetAlmPassword(ALMPassword);
             builder.SetAlmDomain(ALMDomain);
@@ -123,12 +133,12 @@ namespace PSModule
                     properties = GetTaskProperties();
                     if (properties == null || !properties.Any())
                     {
-                        throw new AlmException("Invalid or missing properties!");
+                        throw new AlmException("Invalid or missing properties!", ErrorCategory.InvalidData);
                     }
                 }
                 catch (Exception e)
                 {
-                    ThrowTerminatingError(new ErrorRecord(e, nameof(GetTaskProperties), ErrorCategory.ParserError, string.Empty));
+                    ThrowTerminatingError(new ErrorRecord(e, nameof(GetTaskProperties), ErrorCategory.ParserError, nameof(ProcessRecord)));
                     return;
                 }
 
@@ -152,7 +162,6 @@ namespace PSModule
 
                 if (!SaveProperties(paramFileName, properties))
                 {
-                    WriteError(new ErrorRecord(new Exception("Cannot save properties"), nameof(SaveProperties), ErrorCategory.WriteError, string.Empty));
                     return;
                 }
 
@@ -165,14 +174,19 @@ namespace PSModule
 
                 CollateRetCode(resdir, (int)runStatus);
             }
+            catch(AlmException ae)
+            {
+                LogError(ae, ae.Category);
+                runMgr?.Stop();
+            }
             catch (IOException ioe)
             {
-                WriteError(new ErrorRecord(ioe, nameof(IOException), ErrorCategory.ResourceExists, string.Empty));
+                LogError(ioe, ErrorCategory.ResourceExists);
                 runMgr?.Stop();
             }
             catch (ThreadInterruptedException e)
             {
-                WriteError(new ErrorRecord(e, nameof(ThreadInterruptedException), ErrorCategory.OperationStopped, "ThreadInterruptedException target"));
+                LogError(e, ErrorCategory.OperationStopped);
                 runMgr?.Stop();
             }
         }
@@ -182,7 +196,8 @@ namespace PSModule
             var res = RunStatus.FAILED;
             TestSuites testsuites = await runMgr.Execute();
             await SaveResults(resFilename, testsuites).ConfigureAwait(false);
-            if (!testsuites.ListOfTestSuites.Any(ts => ts.ListOfTestCases.Any(tc => tc.Status.In(JUnitTestCaseStatus.ERROR, JUnitTestCaseStatus.FAILURE))))
+            if (testsuites?.ListOfTestSuites.Any() == true && 
+                !testsuites.ListOfTestSuites.Any(ts => ts.ListOfTestCases.Any(tc => tc.Status.In(JUnitTestCaseStatus.ERROR, JUnitTestCaseStatus.FAILURE))))
             {
                 res = RunStatus.PASSED;
             }
@@ -191,20 +206,18 @@ namespace PSModule
 
         private RunManager GetRunManager()
         {
-            Args args = new Args
+            var args = new Args
             {
-                ClientType = ClientType,
                 Description = Description,
                 Domain = ALMDomain,
                 Project = ALMProject,
-                Username = ALMUserName,
-                Password = ALMPassword,
                 ServerUrl = ALMServerPath,
                 Duration = TimeslotDuration,
                 EntityId = ALMEntityId,
                 RunType = TestRunType
             };
-            var client = new RestClient(args.ServerUrl, args.Domain, args.Project, args.Username);
+            var cred = new Credentials(IsSSO, IsSSO ? ClientID : ALMUserName, IsSSO ? ApiKeySecret : ALMPassword);
+            var client = new RestClient(args.ServerUrl, args.Domain, args.Project, ClientType, cred);
             return new RunManager(client, args);
         }
 
@@ -223,7 +236,7 @@ namespace PSModule
                 }
                 catch (Exception e)
                 {
-                    LogError(e.Message, ErrorCategory.ParserError);
+                    LogError(e, ErrorCategory.ParserError);
                     return;
                 }
                 try
@@ -237,14 +250,9 @@ namespace PSModule
                 }
                 catch (Exception e)
                 {
-                    LogError(e.Message, ErrorCategory.WriteError);
+                    LogError(e, ErrorCategory.WriteError);
                 }
             }
-        }
- 
-        public void LogError(string err, ErrorCategory categ = ErrorCategory.NotSpecified, [CallerMemberName] string methodName = "")
-        {
-            WriteError(new ErrorRecord(new Exception(err), methodName, categ, string.Empty));
         }
     }
 }

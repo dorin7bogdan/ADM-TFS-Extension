@@ -6,6 +6,7 @@ using PSModule.AlmLabMgmtClient.SDK.Handler;
 using PSModule.AlmLabMgmtClient.SDK.Interface;
 using PSModule.AlmLabMgmtClient.SDK.Util;
 using System;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +41,7 @@ namespace PSModule.AlmLabMgmtClient.SDK
             TestSuites res = null;
             _isRunning = true;
             var authHandler = AuthManager.Instance;
-            _isLoggedIn = await authHandler.Authenticate(_client, _args.Username, _args.Password, _args.ClientType);
+            _isLoggedIn = await authHandler.Authenticate(_client);
             if (_isLoggedIn)
             {
                 if (await Start())
@@ -99,7 +100,7 @@ namespace PSModule.AlmLabMgmtClient.SDK
             if (runId.IsNullOrWhiteSpace())
             {
                 _logger.LogError(C.NO_RUN_ID);
-                throw new AlmException(C.NO_RUN_ID);
+                throw new AlmException(C.NO_RUN_ID, ErrorCategory.InvalidResult);
             }
             else
             {
