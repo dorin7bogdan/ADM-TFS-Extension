@@ -140,6 +140,7 @@
       "defaultValue": "",
       "groupName": "advanced",
       "required": false,
+      "visibleRule": "runMode = runRemotely",
       "helpMarkDown": "Required for running remotely: The name of the host that runs the test sets"
     }
   ],
