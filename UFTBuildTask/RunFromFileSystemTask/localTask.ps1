@@ -14,13 +14,14 @@ $uftworkdir = $env:UFT_LAUNCHER
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
 	$buildNumber = $env:BUILD_BUILDNUMBER
-	$attemptNumber = $env:SYSTEM_STAGEATTEMPT
+	[int]$rerunIdx = [convert]::ToInt32($env:SYSTEM_STAGEATTEMPT, 10) - 1
+	$rerunType = "rerun"
 } else {
 	$buildNumber = $env:RELEASE_RELEASEID
-	$attemptNumber = $env:RELEASE_ATTEMPTNUMBER
+	[int]$rerunIdx = $env:RELEASE_ATTEMPTNUMBER
+	$rerunType = "attempt"
 }
 
-[int]$rerunIdx = [convert]::ToInt32($attemptNumber, 10) - 1
 $resDir = Join-Path $uftworkdir -ChildPath "res\Report_$buildNumber"
 
 Import-Module $uftworkdir\bin\PSModule.dll
@@ -87,7 +88,7 @@ if ($rptFileName) {
 	$rptFileName = "${pipelineName}_${buildNumber}"
 }
 if ($rerunIdx) {
-	$rptFileName += "_rerun$rerunIdx"
+	$rptFileName += "_$rerunType$rerunIdx"
 }
 
 $archiveNamePattern = "${rptFileName}_Report"
@@ -143,7 +144,7 @@ if($uploadArtifact -eq "yes") {
 }
 
 if ($rerunIdx) {
-	Write-Host "Rerun attempt = $rerunIdx"
+	Write-Host "$((Get-Culture).TextInfo.ToTitleCase($rerunType)) = $rerunIdx"
 	if (Test-Path $runSummary) {
 		try {
 			Remove-Item $runSummary -ErrorAction Stop
@@ -217,7 +218,7 @@ if ($uploadArtifact -eq "yes") {
 # upload and display Run Summary
 if (Test-Path $runSummary) {
 	if ($rerunIdx) {
-		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Run Summary (rerun $rerunIdx);]$runSummary"
+		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Run Summary ($rerunType $rerunIdx);]$runSummary"
 	} else {
 		Write-Host "##vso[task.uploadsummary]$runSummary"
 	}
@@ -226,7 +227,7 @@ if (Test-Path $runSummary) {
 # upload and display UFT report
 if (Test-Path $uftReport) {
 	if ($rerunIdx) {
-		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=UFT Report (rerun $rerunIdx);]$uftReport"
+		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=UFT Report ($rerunType $rerunIdx);]$uftReport"
 	} else {
 		Write-Host "##vso[task.uploadsummary]$uftReport"
 	}
@@ -235,7 +236,7 @@ if (Test-Path $uftReport) {
 # upload and display Failed Tests
 if (Test-Path $failedTests) {
 	if ($rerunIdx) {
-		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Failed Tests (rerun $rerunIdx);]$failedTests"
+		Write-Host "##vso[task.addattachment type=Distributedtask.Core.Summary;name=Failed Tests ($rerunType $rerunIdx);]$failedTests"
 	} else {
 		Write-Host "##vso[task.uploadsummary]$failedTests"
 	}
