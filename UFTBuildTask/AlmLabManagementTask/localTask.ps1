@@ -11,7 +11,6 @@ $varPass = Get-VstsInput -Name 'varPass'
 $varDomain = Get-VstsInput -Name 'varDomain' -Require
 $varProject = Get-VstsInput -Name 'varProject' -Require
 $varRunType = Get-VstsInput -Name 'varRunType'
-$varEntityId = Get-VstsInput -Name 'varEntity'
 $varDescription = Get-VstsInput -Name 'varDescription'
 $varTimeslotDuration = Get-VstsInput -Name 'varTimeslotDuration' -Require
 $varClientType = Get-VstsInput -Name 'varClientType'
