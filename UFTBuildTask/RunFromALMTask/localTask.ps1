@@ -114,10 +114,14 @@ if (Test-Path $retcodefile) {
 
 		if ($retcode -eq -3) {
 			Write-Error "Task Failed with message: Closed by user"
+		} elseif ($retcode -ne -5) {
+			Write-Error "ALM server is not reachable or the provided credentials/domain/project are invalid"
 		} elseif ($retcode -ne 0) {
 			Write-Error "Task Failed"
 		}
 	} else {
 		Write-Error "The file [$retcodefile] is empty!"
 	}
+} else {
+	Write-Error "The file [$retcodefile] is missing!"
 }
