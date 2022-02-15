@@ -59,8 +59,7 @@ In a build step, run UFT One tests stored in the local file system or on an ALM 
 ##### UFT One ALM Lab Environment Preparation
 - Use this task to assign values to AUT Environment Configurations located in ALM.
 - More information is available [here][alm-env-docs]
-#
-#
+
 # Additional Resources
 For assistance or more information on configuring and using this extension, please consult the following resources:
 - [Extension Marketplace page][marketplace]
