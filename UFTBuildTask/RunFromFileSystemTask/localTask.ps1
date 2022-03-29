@@ -1,6 +1,8 @@
 #
 # localTask.ps1
 #
+using namespace PSModule.UftMobile.SDK.UI
+using namespace System.Collections.Generic
 
 param()
 $testPathInput = Get-VstsInput -Name 'testPathInput' -Require
@@ -10,7 +12,63 @@ $artifactType = Get-VstsInput -Name 'artifactType'
 $rptFileName = Get-VstsInput -Name 'reportFileName'
 [bool]$enableFailedTestsRpt = Get-VstsInput -Name 'enableFailedTestsReport' -AsBool
 
+[bool]$useParallelRunner = Get-VstsInput -Name 'useParallelRunner' -AsBool
+$envType = Get-VstsInput -Name 'envType'
+$mcDevices = Get-VstsInput -Name 'mcDevices'
+
+[bool]$useChrome = Get-VstsInput -Name 'chrome' -AsBool
+[bool]$useChromeH = Get-VstsInput -Name 'chromeH' -AsBool
+[bool]$useChromium = Get-VstsInput -Name 'chromium' -AsBool
+[bool]$useEdge = Get-VstsInput -Name 'edge' -AsBool
+[bool]$useFirefox = Get-VstsInput -Name 'firefox' -AsBool
+[bool]$useFirefox64 = Get-VstsInput -Name 'firefox64' -AsBool
+[bool]$useIExplorer = Get-VstsInput -Name 'iExplorer' -AsBool
+[bool]$useIExplorer64 = Get-VstsInput -Name 'iExplorer64' -AsBool
+[bool]$useSafari = Get-VstsInput -Name 'safari' -AsBool
+$browsers = [List[string]]::new()
+if ($useChrome) {
+	$browsers.Add("chrome")
+}
+if ($useChromeH) {
+	$browsers.Add("chromeH")
+}
+if ($useChromium) {
+	$browsers.Add("chromium")
+}
+if ($useEdge) {
+	$browsers.Add("edge")
+}
+if ($useFirefox) {
+	$browsers.Add("firefox")
+}
+if ($useFirefox64) {
+	$browsers.Add("firefox64")
+}
+if ($useIExplorer) {
+	$browsers.Add('iexplorer')
+}
+if ($useIExplorer64) {
+	$browsers.Add('iexplorer64')
+}
+if ($useSafari) {
+	$browsers.Add('safari')
+}
+
+if ($useParallelRunner) {
+	if ($envType -eq "") {
+		Throw "Environment type not selected."
+	} elseif ($envType -eq "mobile" -and [string]::IsNullOrWhiteSpace($mcDevices)) {
+		Throw "The Devices field is required."
+	} elseif ($envType -eq "web" -and $browsers.Count -eq 0) {
+		Throw "At least one browser is required to be checked."
+	}
+}
+
 $uftworkdir = $env:UFT_LAUNCHER
+Import-Module $uftworkdir\bin\PSModule.dll
+
+$parallelRunnerConfig = New-Object -TypeName ParallelRunnerConfig $envType, $mcDevices, $browsers
+
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
 	$buildNumber = $env:BUILD_BUILDNUMBER
@@ -23,8 +81,6 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 }
 
 $resDir = Join-Path $uftworkdir -ChildPath "res\Report_$buildNumber"
-
-Import-Module $uftworkdir\bin\PSModule.dll
 
 #---------------------------------------------------------------------------------------------------
 
@@ -78,9 +134,9 @@ $retcodefile = "$resDir\TestRunReturnCode.txt"
 $results = "$resDir\Results*SSS.xml"
 $failedTests = "$resDir\Failed Tests"
 
-$rptFolders = New-Object System.Collections.Generic.List[System.String]
-$rptFileNames = New-Object System.Collections.Generic.List[System.String]
-$zipFileNames = New-Object System.Collections.Generic.List[System.String]
+$rptFolders = [List[string]]::new()
+$rptFileNames = [List[string]]::new()
+$zipFileNames = [List[string]]::new()
 
 if ($rptFileName) {
 	$rptFileName += "_$buildNumber"
@@ -170,7 +226,7 @@ if ($rerunIdx) {
 
 #---------------------------------------------------------------------------------------------------
 #Run the tests
-Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt -Verbose 
+Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $useParallelRunner $parallelRunnerConfig -Verbose 
 
 #single test or multiline tests
 $resFile = (Get-ChildItem -File $results | Sort-Object -Property CreationTime -Descending | Select-Object -First 1)
