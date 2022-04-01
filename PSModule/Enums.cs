@@ -48,4 +48,11 @@ namespace PSModule
         Unstable = -4,
         AlmNotConnected = -5
     }
+
+    public enum EnvType
+    {
+        None,
+        Mobile,
+        Web
+    }
 }

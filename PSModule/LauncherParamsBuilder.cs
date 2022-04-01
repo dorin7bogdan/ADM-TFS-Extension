@@ -65,9 +65,9 @@ namespace PSModule
             SetParamValue("parallelRunnerMode", $"{useParallelRunner}");
         }
 
-        public void SetParallelRunnerEnvType(string envType)
+        public void SetParallelRunnerEnvType(EnvType envType)
         {
-            SetParamValue("envType", envType);
+            SetParamValue("envType", $"{envType}");
         }
 
         public void SetReportName(string reportName)

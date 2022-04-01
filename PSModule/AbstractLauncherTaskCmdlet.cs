@@ -34,15 +34,18 @@ namespace PSModule
         private const string ARTIFACT_TYPE = "artifactType";
         private const string REPORT_NAME = "reportName";
         private const string ARCHIVE_NAME = "archiveName";
-        private const string ENABLE_FAILED_TESTS_RPT = "enableFailedTestsReport";
         protected const string YES = "yes";
         private const string JUNIT_REPORT_XML = "junit_report.xml";
+        private const string RUN_RESULTS_XML = "run_results.xml";
 
         #endregion
 
         private readonly StringBuilder _launcherConsole = new StringBuilder();
         private readonly ConcurrentQueue<string> outputToProcess = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<string> errorToProcess = new ConcurrentQueue<string>();
+
+        protected bool _enableFailedTestsReport;
+        protected bool _isParallelRunnerMode;
 
         protected AbstractLauncherTaskCmdlet() { }
 
@@ -140,13 +143,33 @@ namespace PSModule
                             H.CreateRunSummary(runStatus, totalTests, nrOfTests, resdir);
 
                             var reportFolders = new List<string>();
-                            foreach (var item in listReport)
+                            if (listReport.Any())
                             {
-                                if (!item.ReportPath.IsNullOrWhiteSpace())
-                                    reportFolders.Add(item.ReportPath);
+                                var rptPaths = listReport.Select(p => p.ReportPath).Where(p => !p.IsNullOrWhiteSpace());
+                                if (rptPaths.Any())
+                                {
+                                    if (_isParallelRunnerMode)
+                                    {
+                                        foreach (var path in rptPaths)
+                                        {
+                                            var dir = new DirectoryInfo(path).GetFiles(RUN_RESULTS_XML, SearchOption.AllDirectories).OrderByDescending(f => f.CreationTime).Select(f => f.Directory.FullName).FirstOrDefault();
+                                            if (dir == null)
+                                            {
+                                                LogError(new FileNotFoundException($"The report file '{RUN_RESULTS_XML}' is not found in '{path}'."), ErrorCategory.ResourceUnavailable);
+                                            }
+                                            else
+                                            {
+                                                reportFolders.Add(dir);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        rptPaths.ForEach(p => reportFolders.Add(p));
+                                    }
+                                }
                             }
-
-                            if (runType == RunType.FileSystem && reportFolders.Any() && properties[ENABLE_FAILED_TESTS_RPT] == YES)
+                            if (runType == RunType.FileSystem && reportFolders.Any() && _enableFailedTestsReport)
                             {
                                 //run junit report converter
                                 string outputFileReport = Path.Combine(resdir, JUNIT_REPORT_XML);
