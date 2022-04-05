@@ -64,6 +64,19 @@ namespace PSModule
         [Parameter(Position = 11)]
         public ParallelRunnerConfig ParallelRunnerConfig { get; set; }
 
+        [Parameter(Position = 12)]
+        public IList<string> ReportPaths
+        {
+            get
+            {
+                return _rptPaths;
+            }
+            set
+            {
+                _rptPaths = value;
+            }
+        }
+
         protected override bool CollateResults(string resultFile, string resdir)
         {
             return true; //do nothing here. Collate results should be made by the standard "Copy and Publish Artifacts" TFS task

@@ -46,6 +46,7 @@ namespace PSModule
 
         protected bool _enableFailedTestsReport;
         protected bool _isParallelRunnerMode;
+        protected IList<string> _rptPaths; // this field is instanciated in RunFromFileSystemTask\localTask.ps1 and passed to InvokeFSTaskCmdlet
 
         protected AbstractLauncherTaskCmdlet() { }
 
@@ -141,43 +142,44 @@ namespace PSModule
                         if (totalTests > 0)
                         {
                             H.CreateRunSummary(runStatus, totalTests, nrOfTests, resdir);
-
-                            var reportFolders = new List<string>();
-                            if (listReport.Any())
+                            if (runType == RunType.FileSystem)
                             {
-                                var rptPaths = listReport.Select(p => p.ReportPath).Where(p => !p.IsNullOrWhiteSpace());
-                                if (rptPaths.Any())
+                                if (listReport.Any())
                                 {
-                                    if (_isParallelRunnerMode)
+                                    var rptPaths = listReport.Select(p => p.ReportPath).Where(p => !p.IsNullOrWhiteSpace());
+                                    if (rptPaths.Any())
                                     {
-                                        foreach (var path in rptPaths)
+                                        if (_isParallelRunnerMode)
                                         {
-                                            var dir = new DirectoryInfo(path).GetFiles(RUN_RESULTS_XML, SearchOption.AllDirectories).OrderByDescending(f => f.CreationTime).Select(f => f.Directory.FullName).FirstOrDefault();
-                                            if (dir == null)
+                                            foreach (var path in rptPaths)
                                             {
-                                                LogError(new FileNotFoundException($"The report file '{RUN_RESULTS_XML}' is not found in '{path}'."), ErrorCategory.ResourceUnavailable);
-                                            }
-                                            else
-                                            {
-                                                reportFolders.Add(dir);
+                                                var dir = new DirectoryInfo(path).GetFiles(RUN_RESULTS_XML, SearchOption.AllDirectories).OrderByDescending(f => f.CreationTime).Select(f => f.Directory.FullName).FirstOrDefault();
+                                                if (dir == null)
+                                                {
+                                                    LogError(new FileNotFoundException($"The report file '{RUN_RESULTS_XML}' is not found in '{path}'."), ErrorCategory.ResourceUnavailable);
+                                                }
+                                                else
+                                                {
+                                                    _rptPaths.Add(dir);
+                                                }
                                             }
                                         }
-                                    }
-                                    else
-                                    {
-                                        rptPaths.ForEach(p => reportFolders.Add(p));
+                                        else
+                                        {
+                                            rptPaths.ForEach(p => _rptPaths.Add(p));
+                                        }
                                     }
                                 }
-                            }
-                            if (runType == RunType.FileSystem && reportFolders.Any() && _enableFailedTestsReport)
-                            {
-                                //run junit report converter
-                                string outputFileReport = Path.Combine(resdir, JUNIT_REPORT_XML);
-                                RunConverter(converterPath, outputFileReport, reportFolders);
-                                if (File.Exists(outputFileReport) && new FileInfo(outputFileReport).Length > 0 && nrOfTests[H.FAIL] > 0)
+                                if (_rptPaths.Any() && _enableFailedTestsReport)
                                 {
-                                    H.ReadReportFromXMLFile(outputFileReport, true, out IDictionary<string, IList<ReportMetaData>> failedSteps);
-                                    H.CreateFailedStepsReport(failedSteps, resdir);
+                                    //run junit report converter
+                                    string outputFileReport = Path.Combine(resdir, JUNIT_REPORT_XML);
+                                    RunConverter(converterPath, outputFileReport);
+                                    if (File.Exists(outputFileReport) && new FileInfo(outputFileReport).Length > 0 && nrOfTests[H.FAIL] > 0)
+                                    {
+                                        H.ReadReportFromXMLFile(outputFileReport, true, out IDictionary<string, IList<ReportMetaData>> failedSteps);
+                                        H.CreateFailedStepsReport(failedSteps, resdir);
+                                    }
                                 }
                             }
                         }
@@ -282,7 +284,7 @@ namespace PSModule
             }
         }
 
-        private void RunConverter(string converterPath, string outputfile, List<string> inputReportFolders)
+        private void RunConverter(string converterPath, string outputfile)
         {
             try
             {
@@ -294,7 +296,7 @@ namespace PSModule
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
-                foreach (var reportFolder in inputReportFolders)
+                foreach (var reportFolder in _rptPaths)
                 {
                     info.Arguments += $" \"{reportFolder}\"";
                 }
