@@ -102,7 +102,7 @@ function UploadHtmlReport() {
 	$index = 0
 	foreach ( $item in $rptFolders ) {
 		$testPathReportInput = Join-Path $item -ChildPath "run_results.html"
-		if (Test-Path $testPathReportInput) {
+		if (Test-Path -LiteralPath $testPathReportInput) {
 			$artifact = $rptFileNames[$index]
 			# upload resource to container
 			UploadArtifactToAzureStorage $storageContext $container $testPathReportInput $artifact
@@ -226,21 +226,8 @@ if ($rerunIdx) {
 
 #---------------------------------------------------------------------------------------------------
 #Run the tests
-Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $useParallelRunner $parallelRunnerConfig -Verbose 
+Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $useParallelRunner $parallelRunnerConfig $rptFolders -Verbose 
 
-#single test or multiline tests
-$resFile = (Get-ChildItem -File $results | Sort-Object -Property CreationTime -Descending | Select-Object -First 1)
-if ($resFile -and (Test-Path $resFile.FullName)) {
-	[XML]$testDetails = Get-Content $resFile.FullName
-	$rptAttributes = $testDetails.SelectNodes("/testsuites/testsuite/testcase[@report != '']/@report")
-	if ($rptAttributes) {
-		foreach($attr in $rptAttributes) {
-			$rptFolders.Add($attr.Value)
-		}
-	}
-} else {
-	Write-Error "Cannot find the $results file."
-}
 $ind = 1
 foreach ($item in $rptFolders) {
 	$rptFileNames.Add("${rptFileName}_${ind}.html")

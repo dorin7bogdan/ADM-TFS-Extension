@@ -127,6 +127,7 @@
     <Compile Include="AlmLabMgmtClient\SDK\Util\Xml.cs" />
     <Compile Include="AsyncCmdlet.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="InvokeAlmLabManagementTaskCmdlet.cs" />

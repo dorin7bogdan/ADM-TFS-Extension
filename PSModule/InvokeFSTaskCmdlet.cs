@@ -8,9 +8,6 @@ namespace PSModule
     [Cmdlet(VerbsLifecycle.Invoke, "FSTask")]
     public class InvokeFSTaskCmdlet : AbstractLauncherTaskCmdlet
     {
-        private const string MOBILE = "mobile";
-        private const string WEB = "web";
-
         [Parameter(Position = 0, Mandatory = true)]
         public string TestsPath { get; set; }
 
@@ -39,13 +36,46 @@ namespace PSModule
         public string BuildNumber { get; set; }
 
         [Parameter(Position = 9)]
-        public bool EnableFailedTestsReport { get; set; }
+        public bool EnableFailedTestsReport
+        {
+            get
+            {
+                return _enableFailedTestsReport;
+            }
+            set
+            {
+                _enableFailedTestsReport = value;
+            }
+        }
 
         [Parameter(Position = 10)]
-        public bool UseParallelRunner { get; set; }
+        public bool UseParallelRunner
+        {
+            get
+            {
+                return _isParallelRunnerMode;
+            }
+            set
+            {
+                _isParallelRunnerMode = value;
+            }
+        }
 
         [Parameter(Position = 11)]
         public ParallelRunnerConfig ParallelRunnerConfig { get; set; }
+
+        [Parameter(Position = 12)]
+        public IList<string> ReportPaths
+        {
+            get
+            {
+                return _rptPaths;
+            }
+            set
+            {
+                _rptPaths = value;
+            }
+        }
 
         protected override bool CollateResults(string resultFile, string resdir)
         {
@@ -75,11 +105,11 @@ namespace PSModule
             builder.SetContainer(Container);
             builder.SetBuildNumber(BuildNumber);
             builder.SetEnableFailedTestsReport(EnableFailedTestsReport);
-            builder.SetUseParallelRunner(UseParallelRunner);
-            if (UseParallelRunner)
+            builder.SetUseParallelRunner(_isParallelRunnerMode);
+            if (_isParallelRunnerMode)
             {
                 builder.SetParallelRunnerEnvType(ParallelRunnerConfig.EnvType);
-                if (ParallelRunnerConfig.EnvType == MOBILE)
+                if (ParallelRunnerConfig.EnvType == EnvType.Mobile)
                 {
                     var devices = ParallelRunnerConfig.Devices;
                     if (devices.Any())
@@ -93,7 +123,7 @@ namespace PSModule
                         }
                     }
                 }
-                else if (ParallelRunnerConfig.EnvType == WEB)
+                else if (ParallelRunnerConfig.EnvType == EnvType.Web)
                 {
                     //TOOO
                 }
