@@ -21,6 +21,11 @@
       "name": "parallelRunner",
       "displayName": "Parallel Runner",
       "isExpanded": false
+    },
+    {
+      "name": "mobileCenter",
+      "displayName": "Mobile Center",
+      "isExpanded": false
     }
   ],
   "inputs": [
@@ -204,6 +209,33 @@
       "defaultValue": "$(System.DefinitionName)",
       "visibleRule": "artifactType = onlyReport || artifactType = bothReportArchive",
       "helpMarkDown": "Choose a name for the UFT One report file"
+    },
+    {
+      "name": "mcServerUrl",
+      "groupName": "mobileCenter",
+      "type": "string",
+      "label": "Server",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "The address of your Mobile Center server, in the format http[s]://(MC server name):(port)"
+    },
+    {
+      "name": "mcUsername",
+      "groupName": "mobileCenter",
+      "type": "string",
+      "label": "Username",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "The username that will access this Mobile Center server during the build step run"
+    },
+    {
+      "name": "mcPassword",
+      "groupName": "mobileCenter",
+      "type": "string",
+      "label": "Password",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "The password for the user that will access this Mobile Center server during the build step run"
     }
   ],
 
