@@ -78,7 +78,7 @@ namespace PSModule
         public ParallelRunnerConfig ParallelRunnerConfig { get; set; }
 
         [Parameter(Position = 12)]
-        public IList<string> ReportPaths
+        public List<string> ReportPaths
         {
             get
             {
@@ -142,16 +142,26 @@ namespace PSModule
                     {
                         for (int i = 0; i < tests.Length; i++)
                         {
-                            for (int j = 0; j < devices.Count; j++)
+                            foreach (var (d, j) in devices.WithIndex())
                             {
-                                builder.SetParallelTestEnv(i + 1, j + 1, devices[j].ToRawString());
+                                builder.SetParallelTestEnv(i + 1, j + 1, d.ToRawString());
                             }
                         }
                     }
                 }
                 else if (ParallelRunnerConfig.EnvType == EnvType.Web)
                 {
-                    //TOOO
+                    var browsers = ParallelRunnerConfig.Browsers;
+                    if (browsers.Any())
+                    {
+                        for (int i = 0; i < tests.Length; i++)
+                        {
+                            foreach (var (b, j) in browsers.WithIndex())
+                            {
+                                builder.SetParallelTestEnv(i + 1, j + 1, $"browser: {b}");
+                            }
+                        }
+                    }
                 }
             }
             if (_mobileConfig != null)
@@ -171,7 +181,6 @@ namespace PSModule
         {
             if (_isParallelRunnerMode && ParallelRunnerConfig.EnvType == EnvType.Mobile && ParallelRunnerConfig.Devices.Any() && MobileConfig != null)
             {
-                //TODO check if devices have properties
                 ValidateDevices().Wait();
             }
             base.ProcessRecord();
@@ -181,9 +190,10 @@ namespace PSModule
         {
             WriteDebug("Validating the devices....");
             GetGroupedDevices(out IList<Device> idDevices, out IList<Device> noIdDevices);
-            if (!idDevices.Any() && noIdDevices.Any(d => d.Manufacturer.IsNullOrWhiteSpace() && d.Model.IsNullOrWhiteSpace() && d.OSType.IsNullOrWhiteSpace() && d.OSVersion.IsNullOrWhiteSpace()))
+            var devicesWithIdAndOtherProps = idDevices.Where(d => d.HasSecondaryProperties());
+            if (devicesWithIdAndOtherProps.Any())
             {
-                ThrowTerminatingError(new(new("One or more provided devices are empty"), nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices)));
+                WriteObject($"DeviceID and other attributes were provided for {devicesWithIdAndOtherProps.Count()} device(s). In this case only the DeviceID will be considered ({devicesWithIdAndOtherProps.Select(d => d.DeviceId).Aggregate((id1, id2) => $"{id1}, {id2}")})");
             }
 
             var allDevices = await GetAllDevices();
