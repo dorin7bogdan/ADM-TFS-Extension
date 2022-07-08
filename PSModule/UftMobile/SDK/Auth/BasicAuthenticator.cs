@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace PSModule.UftMobile.SDK.Auth
 {
-    using C = Constants;
     public class BasicAuthenticator : IAuthenticator
     {
         private const string LOGIN_ENDPOINT = "rest/client/login";
@@ -14,18 +13,19 @@ namespace PSModule.UftMobile.SDK.Auth
 
         public async Task<bool> Login(IClient client)
         {
-            string username = client.Credentials.UsernameOrClient;
+            string username = client.Credentials.UsernameOrClientId;
             string pass = client.Credentials.PasswordOrSecret;
 
             try
             {
                 string body = @$"{{""name"":""{username}"", ""password"":""{pass}"", ""accountName"": ""default""}}";
-                var res = await client.HttpPost(client.ServerUrl.AppendSuffix(LOGIN_ENDPOINT), body: body);
+                var res = await client.HttpPost(LOGIN_ENDPOINT, body: body);
                 if (!res.IsOK)
                 {
                     await client.Logger.LogDebug($"StatusCode=[{res.StatusCode}]");
                     await client.Logger.LogInfo($"{res.Error}");
                 }
+                client.IsLoggedIn = res.IsOK;
                 return res.IsOK;
             }
             catch (ThreadInterruptedException)
