@@ -27,10 +27,12 @@ namespace PSModule
         private const string MISSING_OR_INVALID_DEVICE = "Missing or invalid device";
         private const string FAILED_TO_CREATE_TEMP_JOB = "UFT Mobile server failed to create a temp job";
         private const string NO_JOB_FOUND_BY_GIVEN_ID = "No job found by given ID";
+        private const string NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID = "No active tenant (project) found by given ID";
         private const string DEVICES_ENDPOINT = "rest/devices";
         private const string GET_JOB_ENDPOINT = "rest/job";
         private const string CREATE_TEMP_JOB_ENDPOINT = "rest/job/createTempJob";
         private const string UPDATE_JOB_ENDPOINT = "rest/job/updateJob/";
+        private const string GET_PROJECTS_ENPOINT = "rest/v1/project?includeManagement=false";
         private const string REGISTERED = "registered";
         private const string UNREGISTERED = "unregistered";
         private const string HEAD = "HEAD";
@@ -205,6 +207,12 @@ namespace PSModule
             if (MobileConfig != null)
             {
                 InitRestClientAndLogin().Wait();
+
+                if (!IsValidTenantId().Result)
+                {
+                    ThrowTerminatingError($"{NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID}: {MobileConfig.TenantId}", nameof(IsValidTenantId), ErrorCategory.InvalidData, nameof(IsValidTenantId));
+                }
+
                 if (MobileConfig.UseProxy)
                 {
                     try
@@ -213,14 +221,14 @@ namespace PSModule
                     }
                     catch (WebException wex)
                     {
-                        ThrowTerminatingError(new(new(GetErrorFromWebException(wex)), nameof(CheckProxy), ErrorCategory.AuthenticationError, nameof(CheckProxy)));
+                        ThrowTerminatingError(GetErrorFromWebException(wex), nameof(CheckProxy), ErrorCategory.AuthenticationError, nameof(CheckProxy));
                     }
                     catch (Exception ex)
                     {
                         ex = ex.InnerException ?? ex;
                         string err = ex is WebException wex ? GetErrorFromWebException(wex) : $"Proxy Error: {ex.Message}";
                         WriteDebug($"{ex.GetType().Name}: {ex.Message}");
-                        ThrowTerminatingError(new(new(err), nameof(CheckProxy), ErrorCategory.AuthenticationError, nameof(CheckProxy)));
+                        ThrowTerminatingError(err, nameof(CheckProxy), ErrorCategory.AuthenticationError, nameof(CheckProxy));
                     }
                 }
                 if (_isParallelRunnerMode && ParallelRunnerConfig.EnvType == EnvType.Mobile && ParallelRunnerConfig.Devices.Any())
@@ -355,7 +363,7 @@ namespace PSModule
                 }
                 else
                 {
-                    ThrowTerminatingError(new(new($"No available devices found."), nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices)));
+                    ThrowTerminatingError($"No available devices found.", nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
                 }
             }
             if (noIdDevices.Any())
@@ -378,7 +386,7 @@ namespace PSModule
             Device dev = MobileConfig.Device;
             if (dev == null)
             {
-                ThrowTerminatingError(new(new(MISSING_OR_INVALID_DEVICE), nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices)));
+                ThrowTerminatingError(MISSING_OR_INVALID_DEVICE, nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
             }
             if (!dev.DeviceId.IsNullOrWhiteSpace() && dev.HasSecondaryProperties())
             {
@@ -391,23 +399,23 @@ namespace PSModule
             {
                 if (!dev.IsAvailable(onlineDevices.AsQueryable(), out string msg))
                 {
-                    ThrowTerminatingError(new(new($"No available device matches the criteria -> {msg}"), nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices)));
+                    ThrowTerminatingError($"No available device matches the criteria -> {msg}", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
                 }
             }
             else
             {
                 if (offlineDevices.Any() && offlineDevices.Where(d => d.DeviceId == dev.DeviceId).Any())
                 {
-                    ThrowTerminatingError(new(new($@"The device with ID ""{dev.DeviceId}"" is disconnected"), nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices)));
+                    ThrowTerminatingError($@"The device with ID ""{dev.DeviceId}"" is disconnected", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
                 }
                 if (onlineDevices.Any())
                 {
                     if (!onlineDevices.Where(d => d.DeviceId == dev.DeviceId).Any())
-                        ThrowTerminatingError(new(new(@$"No available device found by ID ""{dev.DeviceId}"""), nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices)));
+                        ThrowTerminatingError(@$"No available device found by ID ""{dev.DeviceId}""", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
                 }
                 else
                 {
-                    ThrowTerminatingError(new(new($"No available devices found."), nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices)));
+                    ThrowTerminatingError($"No available devices found.", nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
                 }
             }
         }
@@ -439,7 +447,7 @@ namespace PSModule
             }
             else
             {
-                ThrowTerminatingError(new(new(LOGIN_FAILED), nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices)));
+                ThrowTerminatingError(LOGIN_FAILED, nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
             }
         }
 
@@ -447,9 +455,9 @@ namespace PSModule
         {
             if (_auth != null && _isLoggedIn)
             {
-                _auth.Logout(_client);
+                _auth.Logout(_client).Wait();
             }
-            ThrowTerminatingError(err, errorId, errorCategory, targetObject);
+            ThrowTerminatingError(new(new(err), errorId, errorCategory, targetObject));
         }
 
         private async Task<IList<Device>> GetAllDevices()
@@ -525,6 +533,41 @@ namespace PSModule
         {
             //TODO
             throw new NotImplementedException();
+        }
+
+        private async Task<Project[]> GetProjects()
+        {
+            var res = await _client.HttpGet<Project>($"{GET_PROJECTS_ENPOINT}", resType: ResType.Array);
+            if (res.IsOK)
+            {
+                return res.Entities;
+            }
+            else
+            {
+                return new Project[0];
+            }
+        }
+        private async Task<Project> GetProject(int tenantId)
+        {
+            var projects = await GetProjects();
+            if (projects.Any())
+            {
+                var project = projects.FirstOrDefault(p => p.Id == tenantId);
+                return project;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private async Task<bool> IsValidTenantId()
+        {
+            int tenantId = MobileConfig.TenantId;
+            if (tenantId == 0)
+                return true;
+            var project = await GetProject(tenantId);
+            return project?.IsActive == true;
         }
     }
 }
