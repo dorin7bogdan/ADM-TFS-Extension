@@ -26,10 +26,21 @@ namespace PSModule.UftMobile.SDK
         }
         public Response(string body, WebHeaderCollection headers, HttpStatusCode statusCode) : this(headers, statusCode)
         {
-            var res = JsonConvert.DeserializeObject<Result>(body);
-            if (res.Error)
+            try
             {
-                _error = res.Message;
+                var res = JsonConvert.DeserializeObject<Result>(body);
+                if (res.Error)
+                {
+                    _error = res.Message;
+                }
+            }
+            catch
+            {
+                bool.TryParse(body, out bool ok);
+                if (!ok)
+                {
+                    _error = body;
+                }
             }
         }
 
@@ -46,7 +57,7 @@ namespace PSModule.UftMobile.SDK
     {
         private readonly T[] _entries;
         public T[] Entities => _entries ?? new T[0];
-        public T FirstEntity => _entries?[0];
+        public T Entity => _entries?[0];
         public Response(string body, WebHeaderCollection headers, HttpStatusCode statusCode, ResType resType) : base(headers, statusCode)
         {
             switch (resType)
@@ -73,13 +84,43 @@ namespace PSModule.UftMobile.SDK
                     }
                 case ResType.Array:
                     {
-                        _entries = JsonConvert.DeserializeObject<T[]>(body);
+                        try
+                        {
+                            Result res = JsonConvert.DeserializeObject<Result>(body);
+                            if (res.Error)
+                            {
+                                _error = res.Message;
+                            }
+                        }
+                        catch { /*  no action */ }
+                        finally
+                        {
+                            if (_error.IsNullOrEmpty())
+                            {
+                                _entries = JsonConvert.DeserializeObject<T[]>(body);
+                            }
+                        }
                         break;
                     }
                 default:
                     {
-                        var res = JsonConvert.DeserializeObject<T>(body);
-                        _entries = new T[] { res };
+                        try
+                        {
+                            Result res = JsonConvert.DeserializeObject<Result>(body);
+                            if (res.Error)
+                            {
+                                _error = res.Message;
+                            }
+                        }
+                        catch { /*  no action */ }
+                        finally
+                        {
+                            if (_error.IsNullOrEmpty())
+                            {
+                                T obj = JsonConvert.DeserializeObject<T>(body);
+                                _entries = new T[] { obj };
+                            }
+                        }
                         break;
                     }
             }

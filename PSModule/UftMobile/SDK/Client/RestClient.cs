@@ -20,11 +20,11 @@ namespace PSModule.UftMobile.SDK
         private const string X_HP4MSECRET = "x-hp4msecret";
         private const string JSESSIONID = "JSESSIONID";
         private const string SET_COOKIE = "Set-Cookie";
+        private const string PUT = "PUT";
 
         protected readonly Uri _serverUrl; // Example : http://myd-vm21045.swinfra.net:8080/qcbin
         protected IDictionary<string, string> _cookies = new Dictionary<string, string>();
         private readonly Credentials _credentials;
-        private readonly string _xsrfTokenValue;
         private readonly ILogger _logger;
         private string _rawCookies => GetCookiesAsString();
         private string _hp4msecret;
@@ -42,7 +42,7 @@ namespace PSModule.UftMobile.SDK
             _serverUrl = new Uri(serverUrl);
             _credentials = credentials;
             _logger = logger;
-            _xsrfTokenValue = Guid.NewGuid().ToString();
+            //_xsrfTokenValue = Guid.NewGuid().ToString();
             _authType = authType;
             //_cookies.Add(XSRF_TOKEN, _xsrfTokenValue);
         }
@@ -52,8 +52,6 @@ namespace PSModule.UftMobile.SDK
         public Credentials Credentials => _credentials;
 
         public IDictionary<string, string> Cookies => _cookies;
-
-        public string XsrfTokenValue => _xsrfTokenValue;
 
         public ILogger Logger => _logger;
         public AuthType AuthType => _authType;
@@ -144,8 +142,8 @@ namespace PSModule.UftMobile.SDK
             {
                 if (_logger.IsDebug)
                 {
-                    await _logger.LogError(we.Message);
                     PrintHeaders(client);
+                    await _logger.LogDebug(body);
                 }
                 if (we.Response is HttpWebResponse resp)
                     return new Response(we.Message, resp.StatusCode);
@@ -156,8 +154,8 @@ namespace PSModule.UftMobile.SDK
             {
                 if (_logger.IsDebug)
                 {
-                    await _logger.LogError(e.Message);
                     PrintHeaders(client);
+                    await _logger.LogDebug(body);
                 }
                 res = new Response(e.Message);
             }
@@ -190,7 +188,10 @@ namespace PSModule.UftMobile.SDK
             catch (WebException we)
             {
                 if (_logger.IsDebug)
+                {
                     PrintHeaders(client);
+                    await _logger.LogDebug(body);
+                }
                 if (we.Response is HttpWebResponse resp)
                     return new Response<T>(we.Message, resp.StatusCode);
                 else
@@ -199,16 +200,63 @@ namespace PSModule.UftMobile.SDK
             catch (Exception e)
             {
                 if (_logger.IsDebug)
+                {
                     PrintHeaders(client);
+                    await _logger.LogDebug(body);
+                }
                 res = new Response<T>(e.Message);
             }
 
             return res;
         }
 
-        public Task<Response> HttpPut(string endpoint, WebHeaderCollection headers = null, string body = null)
+        public async Task<Response> HttpPut(string endpoint, string body, WebHeaderCollection headers = null)
         {
-            throw new NotImplementedException();
+            Response res;
+            if (!TryBuildHeaders(ref headers, out string err))
+            {
+                if (_logger.IsDebug)
+                    await _logger.LogError(err);
+                return new Response(err);
+            }
+            using var client = new WebClient { Headers = headers };
+            try
+            {
+                await _logger.LogDebug($"PUT {endpoint}");
+                DecorateRequestHeaders(client);
+                string data = await client.UploadStringTaskAsync(ServerUrl.AppendSuffix(endpoint), PUT, body);
+                if (_logger.IsDebug)
+                    PrintHeaders(client);
+
+                res = new Response(data, client.ResponseHeaders, HttpStatusCode.OK);
+                UpdateCookies(client);
+            }
+            catch (ThreadInterruptedException)
+            {
+                throw;
+            }
+            catch (WebException we)
+            {
+                if (_logger.IsDebug)
+                {
+                    PrintHeaders(client);
+                    await _logger.LogDebug(body);
+                }
+                if (we.Response is HttpWebResponse resp)
+                    return new Response(we.Message, resp.StatusCode);
+                else
+                    return new Response(we.Message);
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsDebug)
+                {
+                    PrintHeaders(client);
+                    await _logger.LogDebug(body);
+                }
+                res = new Response(e.Message);
+            }
+            return res;
         }
 
         private void DecorateRequestHeaders(WebClient client)
@@ -284,10 +332,10 @@ namespace PSModule.UftMobile.SDK
                     { HttpRequestHeader.ContentType, C.APP_JSON_UTF8 }
                 };
             }
-            headers.Add(X_HP4MSECRET, _hp4msecret);
 
             if (_isLoggedIn)
             {
+                headers.Add(X_HP4MSECRET, _hp4msecret);
                 if (_authType == AuthType.Basic)
                 {
                     headers.Add(HttpRequestHeader.Cookie, $"{JSESSIONID}={_cookies[JSESSIONID]}");

@@ -29,9 +29,11 @@ namespace PSModule
         private const string NO_JOB_FOUND_BY_GIVEN_ID = "No job found by given ID";
         private const string NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID = "No active tenant (project) found by given ID";
         private const string DEVICES_ENDPOINT = "rest/devices";
+        private const string DEVICE_ENDPOINT = "rest/device";
         private const string GET_JOB_ENDPOINT = "rest/job";
         private const string CREATE_TEMP_JOB_ENDPOINT = "rest/job/createTempJob";
-        private const string UPDATE_JOB_ENDPOINT = "rest/job/updateJob/";
+        //private const string JOB_UPDATE_DEVICES_ENDPOINT = "rest/job/updateDevices";
+        private const string JOB_UPDATE_ENDPOINT = "rest/job/updateJob";
         private const string GET_PROJECTS_ENPOINT = "rest/v1/project?includeManagement=false";
         private const string REGISTERED = "registered";
         private const string UNREGISTERED = "unregistered";
@@ -41,6 +43,8 @@ namespace PSModule
         private const string HTTP_PREFIX = "http://";
         private const string HTTPS_PREFIX = "https://";
         private const string JOB_ID = "job_id";
+        private const string UPDATE_JOB_DEVICE_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{{}},""devices"":[{{""deviceID"":""{1}""}}]}}";
+        private const string UPDATE_JOB_CDFD_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{1},""application"":{{""id"":""MC.Home""}},""devices"":[]}}";
 
         private IClient _client;
         private IAuthenticator _auth;
@@ -207,7 +211,6 @@ namespace PSModule
             if (MobileConfig != null)
             {
                 InitRestClientAndLogin().Wait();
-
                 if (!IsValidTenantId().Result)
                 {
                     ThrowTerminatingError($"{NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID}: {MobileConfig.TenantId}", nameof(IsValidTenantId), ErrorCategory.InvalidData, nameof(IsValidTenantId));
@@ -245,9 +248,23 @@ namespace PSModule
                 }
                 else if (!_isParallelRunnerMode)
                 {
-                    ValidateDevice().Wait();
-                    //TODO
-                    //Job job = GetOrCreateTempJob().Result;
+                    var device = ValidateDevice().Result;
+                    Job job = GetOrCreateTempJob().Result;
+                    List<Device> jobDevices = job.Devices ?? new();
+                    if (device != null) // it means that the deviceId was provided
+                    {
+                        if (jobDevices.Count != 1 || !jobDevices[0].DeviceId.EqualsIgnoreCase(device.DeviceId))
+                        {
+                            UpdateJobDevice(job.Id, device.DeviceId).Wait();
+                        }
+                        _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, device)}";
+                    }
+                    else // other device properties were provided
+                    {
+                        var cdfDetails = (CapableDeviceFilterDetails)_mobileConfig.Device;
+                        UpdateJobCDFDetails(job.Id, cdfDetails).Wait();
+                        _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, cdfDetails: cdfDetails)}";
+                    }
                 }
             }
             base.ProcessRecord();
@@ -380,44 +397,43 @@ namespace PSModule
             return warnings;
         }
 
-        private async Task ValidateDevice()
+        private async Task<Device> ValidateDevice()
         {
             WriteDebug("Validating the device ....");
+            Device device = null;
             Device dev = MobileConfig.Device;
+            string err = null;
             if (dev == null)
             {
-                ThrowTerminatingError(MISSING_OR_INVALID_DEVICE, nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
+                err = MISSING_OR_INVALID_DEVICE;
             }
             if (!dev.DeviceId.IsNullOrWhiteSpace() && dev.HasSecondaryProperties())
             {
                 WriteObject($"DeviceID and other attributes were provided for device. In this case only the DeviceID will be considered ({dev.DeviceId})");
             }
 
-            var allDevices = await GetAllDevices();
-            GetAllDeviceIds(allDevices, out IList<Device> onlineDevices, out IList<Device> offlineDevices);
             if (dev.DeviceId.IsNullOrWhiteSpace())
             {
+                var allDevices = await GetAllDevices();
+                GetAllDeviceIds(allDevices, out IList<Device> onlineDevices, out IList<Device> offlineDevices);
                 if (!dev.IsAvailable(onlineDevices.AsQueryable(), out string msg))
                 {
-                    ThrowTerminatingError($"No available device matches the criteria -> {msg}", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
+                    err = $"No available device matches the criteria -> {msg}";
                 }
             }
             else
             {
-                if (offlineDevices.Any() && offlineDevices.Where(d => d.DeviceId == dev.DeviceId).Any())
-                {
-                    ThrowTerminatingError($@"The device with ID ""{dev.DeviceId}"" is disconnected", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
-                }
-                if (onlineDevices.Any())
-                {
-                    if (!onlineDevices.Where(d => d.DeviceId == dev.DeviceId).Any())
-                        ThrowTerminatingError(@$"No available device found by ID ""{dev.DeviceId}""", nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
-                }
-                else
-                {
-                    ThrowTerminatingError($"No available devices found.", nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
-                }
+                device = await GetDevice(dev.DeviceId);
+                if (device == null)
+                    err = @$"Device ""{dev.DeviceId}"" not found.";
+                else if (device.DeviceStatus == UNREGISTERED)
+                    err = $@"The device with ID ""{dev.DeviceId}"" is disconnected";
             }
+            if (!err.IsNullOrEmpty())
+            {
+                ThrowTerminatingError(err, nameof(ValidateDevice), ErrorCategory.InvalidData, nameof(ValidateDevice));
+            }
+            return device;
         }
 
         private void GetAllDeviceIds(IList<Device> allDevices, out IList<Device> onlineDevices, out IList<Device> offlineDevices)
@@ -473,14 +489,25 @@ namespace PSModule
             return new List<Device>();
         }
 
+        private async Task<Device> GetDevice(string id)
+        {
+            var res = await _client.HttpGet<Device>($"{DEVICE_ENDPOINT}/{id}", resType: ResType.DataEntity);
+            if (res.IsOK)
+                return res.Entity;
+            else
+                ThrowTerminatingError(res.Error, nameof(ValidateDevice), ErrorCategory.DeviceError, nameof(ValidateDevice));
+
+            return null;
+        }
+
         private async Task<Job> CreateTempJob()
         {
             Job job = null;
             var res = await _client.HttpGet<Job>(CREATE_TEMP_JOB_ENDPOINT, resType: ResType.DataEntity);
             if (res.IsOK)
             {
-                if (res.Entities.Any() && res.Entities[0] != null)
-                    job = res.Entities[0];
+                if (res.Entity != null)
+                    job = res.Entity;
                 else
                     ThrowTerminatingError(FAILED_TO_CREATE_TEMP_JOB, nameof(CreateTempJob), ErrorCategory.DeviceError, nameof(CreateTempJob));
             }
@@ -493,17 +520,15 @@ namespace PSModule
 
         private async Task<Job> GetJob(string jobId)
         {
-            WriteDebug($"GetJob: {jobId}");
             var res = await _client.HttpGet<Job>($"{GET_JOB_ENDPOINT}/{jobId}", resType: ResType.DataEntity);
             if (res.IsOK && res.Entities.Any())
             {
                 var job = res.Entities[0];
-                WriteDebug($"Found job: {job}");
                 return job;
             }
-            else 
+            else
             {
-                WriteDebug(res.IsOK ? $"{NO_JOB_FOUND_BY_GIVEN_ID}: {jobId}" : res.Error);
+                await _client.Logger.LogDebug(res.IsOK ? $"{NO_JOB_FOUND_BY_GIVEN_ID}: {jobId}" : res.Error);
                 return null;
             }
         }
@@ -529,12 +554,23 @@ namespace PSModule
             return job;
         }
 
-        private async Task<Job> UpdateJob(Job job)
+        private async Task UpdateJobDevice(string jobId, string deviceId)
         {
-            //TODO
-            throw new NotImplementedException();
+            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_DEVICE_FORMAT, jobId, deviceId));
+            if (!res.IsOK)
+            {
+                ThrowTerminatingError(res.Error, nameof(UpdateJobDevice), ErrorCategory.NotSpecified, nameof(UpdateJobDevice));
+            }
         }
 
+        private async Task UpdateJobCDFDetails(string jobId, CapableDeviceFilterDetails details)
+        {
+            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_CDFD_FORMAT, jobId, details.ToJson(false, true)));
+            if (!res.IsOK)
+            {
+                ThrowTerminatingError(res.Error, nameof(UpdateJobCDFDetails), ErrorCategory.NotSpecified, nameof(UpdateJobCDFDetails));
+            }
+        }
         private async Task<Project[]> GetProjects()
         {
             var res = await _client.HttpGet<Project>($"{GET_PROJECTS_ENPOINT}", resType: ResType.Array);
@@ -550,15 +586,7 @@ namespace PSModule
         private async Task<Project> GetProject(int tenantId)
         {
             var projects = await GetProjects();
-            if (projects.Any())
-            {
-                var project = projects.FirstOrDefault(p => p.Id == tenantId);
-                return project;
-            }
-            else
-            {
-                return null;
-            }
+            return projects.FirstOrDefault(p => p.Id == tenantId);
         }
 
         private async Task<bool> IsValidTenantId()

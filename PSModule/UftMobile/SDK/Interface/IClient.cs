@@ -29,16 +29,14 @@ namespace PSModule.UftMobile.SDK.Interface
 
         Task<Response> HttpPut(
                 string endpoint,
-                WebHeaderCollection headers = null,
-                string body = null);
+                string body,
+                WebHeaderCollection headers = null);
 
         Uri ServerUrl { get; }
 
         Credentials Credentials { get; }
 
         IDictionary<string, string> Cookies { get; }
-
-        string XsrfTokenValue { get; }
 
         ILogger Logger { get; }
 
