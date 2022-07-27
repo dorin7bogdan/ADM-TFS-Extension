@@ -1,8 +1,8 @@
 {
 	"manifestVersion": 1,
-	"id": "UFT-Azure-extension-QA",
-	"name": "UFT One Azure DevOps extension",
-	"version": "3.7.5",
+	"id": "UFT-Azure-extension-DEV",
+	"name": "UFT One Azure DevOps extension DEV",
+	"version": "1.0.0",
 	"publisher": "DorinBogdan",
 	"targets": [{
 		"id": "Microsoft.VisualStudio.Services",
@@ -68,22 +68,7 @@
 	},
 	"files": [
 		{
-			"path": "AlmLabEnvPrepareTask"
-		},
-		{
-			"path": "AlmLabManagementTask"
-		},
-		{
-			"path": "GetMobileResourcesTask"
-		},
-		{
-			"path": "RunFromALMTask"
-		},
-		{
 			"path": "RunFromFileSystemTask"
-		},
-		{
-			"path": "ParallelRunnerTask"
 		},
 		{
 			"path": "node_modules/vss-web-extension-sdk/lib/VSS.SDK.js",
@@ -103,36 +88,6 @@
 
 	"contributions": [
 		{
-			"id": "custom-build-task-1",
-			"type": "ms.vss-distributed-task.task",
-			"targets": [
-				"ms.vss-distributed-task.tasks"
-			],
-			"properties": {
-				"name": "AlmLabEnvPrepareTask"
-			}
-		},
-		{
-			"id": "custom-build-task-2",
-			"type": "ms.vss-distributed-task.task",
-			"targets": [
-				"ms.vss-distributed-task.tasks"
-			],
-			"properties": {
-				"name": "AlmLabManagementTask"
-			}
-		},
-		{
-			"id": "custom-build-task-3",
-			"type": "ms.vss-distributed-task.task",
-			"targets": [
-				"ms.vss-distributed-task.tasks"
-			],
-			"properties": {
-				"name": "RunFromALMTask"
-			}
-		},
-		{
 			"id": "custom-build-task-4",
 			"type": "ms.vss-distributed-task.task",
 			"targets": [
@@ -140,26 +95,6 @@
 			],
 			"properties": {
 				"name": "RunFromFileSystemTask"
-			}
-		},
-		{
-			"id": "custom-build-task-5",
-			"type": "ms.vss-distributed-task.task",
-			"targets": [
-				"ms.vss-distributed-task.tasks"
-			],
-			"properties": {
-				"name": "GetMobileResourcesTask"
-			}
-		},
-		{
-			"id": "custom-build-task-6",
-			"type": "ms.vss-distributed-task.task",
-			"targets": [
-				"ms.vss-distributed-task.tasks"
-			],
-			"properties": {
-				"name": "ParallelRunnerTask"
 			}
 		}
 	],
