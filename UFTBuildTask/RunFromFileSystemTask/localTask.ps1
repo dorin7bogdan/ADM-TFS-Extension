@@ -14,25 +14,12 @@ $rptFileName = Get-VstsInput -Name 'reportFileName'
 [bool]$enableFailedTestsRpt = Get-VstsInput -Name 'enableFailedTestsReport' -AsBool
 
 $mcServerUrl = Get-VstsInput -Name 'mcServerUrl'
-$mcAuthType = Get-VstsInput -Name 'mcAuthType' -Require
-$mcUsername = Get-VstsInput -Name 'mcUsername'
-$mcPassword = Get-VstsInput -Name 'mcPassword'
-[int]$mcTenantId = Get-VstsInput -Name 'mcTenantId' -AsInt
-$mcAccessKey = Get-VstsInput -Name 'mcAccessKey'
-$mcDevice = Get-VstsInput -Name 'mcDevice'
-[bool]$useMcProxy = Get-VstsInput -Name 'useMcProxy' -AsBool
-$mcProxyUrl = Get-VstsInput -Name 'mcProxyUrl'
-[bool]$useMcProxyCredentials = Get-VstsInput -Name 'useMcProxyCredentials' -AsBool
-$mcProxyUsername = Get-VstsInput -Name 'mcProxyUsername'
-$mcProxyPassword = Get-VstsInput -Name 'mcProxyPassword'
 
 $uftworkdir = $env:UFT_LAUNCHER
 Import-Module $uftworkdir\bin\PSModule.dll
 [bool]$useParallelRunner = $false
 $parallelRunnerConfig = $null
 $mobileConfig = $null
-$proxyConfig = $null
-[Device]$device = $null
 
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
@@ -47,6 +34,25 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 }
 
 if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
+	[Device]$device = $null
+	[List[AppLine]]$apps = $null
+	[DeviceMetrics]$metrics = $null
+	[bool]$mcInstall = $false
+	[bool]$mcRestart = $false
+	[bool]$mcUninstall = $false
+
+	$mcAuthType = Get-VstsInput -Name 'mcAuthType' -Require
+	$mcUsername = Get-VstsInput -Name 'mcUsername'
+	$mcPassword = Get-VstsInput -Name 'mcPassword'
+	[int]$mcTenantId = Get-VstsInput -Name 'mcTenantId' -AsInt
+	$mcAccessKey = Get-VstsInput -Name 'mcAccessKey'
+	$mcDevice = Get-VstsInput -Name 'mcDevice'
+	[bool]$useMcProxy = Get-VstsInput -Name 'useMcProxy' -AsBool
+
+	$mcAppType = Get-VstsInput -Name 'mcAppType'
+	$mcSysApp = $null
+	$mcApps = Get-VstsInput -Name 'mcApps'
+
 	[bool]$isBasicAuth = ($mcAuthType -eq "basic")
 	if ($isBasicAuth -and [string]::IsNullOrWhiteSpace($mcUsername)) {
 		throw "Mobile Center Username is empty."
@@ -56,7 +62,38 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		throw "The Device field is required."
 	} elseif ($false -eq [Device]::TryParse($mcDevice, [ref]$device)) {
 		throw "Invalid device -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: DeviceID, Manufacturer, Model, OSType and OSVersion.";
+	} elseif ($mcAppType -eq "custom") {
+		[List[string]]$invalidAppLines = $null
+		[bool]$isFirstLineOK = [AppLine]::ParseLines($mcApps, [ref]$apps, [ref]$invalidAppLines)
+		if (!$isFirstLineOK) {
+			throw "The first UFT Mobile Application is invalid."
+		} else if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
+			foreach ($line in $invalidAppLines) {
+				Write-Warning "Invalid app line -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: ID, Identifier or Name (required) and Packaged (optional).";
+			}
+		}
+		if ($devices.Count -eq 0) {
+			throw "Missing or invalid devices."
+		}
+		$mcInstall = Get-VstsInput -Name 'mcInstall' -AsBool
+		$mcRestart = Get-VstsInput -Name 'mcRestart' -AsBool
+		$mcUninstall = Get-VstsInput -Name 'mcUninstall' -AsBool
+	} elseif ($mcAppType -eq "system") {
+		$mcSysApp = Get-VstsInput -Name 'mcSysApp'
 	}
+	[bool]$mcLogDeviceMetrics = Get-VstsInput -Name 'mcLogDeviceMetrics' -AsBool
+	if ($mcLogDeviceMetrics) {
+		[bool]$mcCPU = Get-VstsInput -Name 'mcCPU' -AsBool
+		[bool]$mcMemory = Get-VstsInput -Name 'mcMemory' -AsBool
+		[bool]$mcFreeMemory = Get-VstsInput -Name 'mcFreeMemory' -AsBool
+		[bool]$mcLogs = Get-VstsInput -Name 'mcLogs' -AsBool
+		[bool]$mcWifiState = Get-VstsInput -Name 'mcWifiState' -AsBool
+		[bool]$mcThermalState = Get-VstsInput -Name 'mcThermalState' -AsBool
+		[bool]$mcFreeDiskSpace = Get-VstsInput -Name 'mcFreeDiskSpace' -AsBool
+		$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeDiskSpace, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
+	}
+
+	$appConfig = [AppConfig]::new($mcAppType, $mcSysApp, $apps, $metrics, $mcInstall, $mcRestart, $mcUninstall)
 
 	if ($isBasicAuth) {
 		$mobileSrvConfig = [ServerConfig]::new($mcServerUrl, $mcUsername, $mcPassword, $mcTenantId)
@@ -69,7 +106,13 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		$mobileSrvConfig = [ServerConfig]::new($mcServerUrl, $mcClientId, $mcSecret, $mcTenantId, $false)
 	}
 
+	$proxyConfig = $null
 	if ($useMcProxy) {
+		$mcProxyUrl = Get-VstsInput -Name 'mcProxyUrl'
+		[bool]$useMcProxyCredentials = Get-VstsInput -Name 'useMcProxyCredentials' -AsBool
+		$mcProxyUsername = Get-VstsInput -Name 'mcProxyUsername'
+		$mcProxyPassword = Get-VstsInput -Name 'mcProxyPassword'
+
 		if ([string]::IsNullOrWhiteSpace($mcProxyUrl)) {
 			throw "Proxy Server is empty."
 		} elseif ($useMcProxyCredentials -and [string]::IsNullOrWhiteSpace($mcProxyUsername)) {
@@ -79,7 +122,7 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		$proxyConfig = [ProxyConfig]::new($proxySrvConfig, $useMcProxyCredentials)
 	}
 	
-	$mobileConfig = [MobileConfig]::new($mobileSrvConfig, $useMcProxy, $proxyConfig, $device, $workDir)
+	$mobileConfig = [MobileConfig]::new($mobileSrvConfig, $useMcProxy, $proxyConfig, $device, $appConfig, $workDir)
 }
 
 $resDir = Join-Path $uftworkdir -ChildPath "res\Report_$buildNumber"
