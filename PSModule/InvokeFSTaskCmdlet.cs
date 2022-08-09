@@ -24,10 +24,14 @@ namespace PSModule
         private const string DEBUG_PREFERENCE = "DebugPreference";
         private const string LOGIN_FAILED = "Login failed";
         private const string MISSING_OR_INVALID_DEVICES = "Missing or invalid devices";
+        private const string MISSING_OR_INVALID_APP = "Missing or invalid application";
+        private const string MISSING_OR_INVALID_APPS = "Missing or invalid applications";
         private const string MISSING_OR_INVALID_DEVICE = "Missing or invalid device";
         private const string FAILED_TO_CREATE_TEMP_JOB = "UFT Mobile server failed to create a temp job";
         private const string NO_JOB_FOUND_BY_GIVEN_ID = "No job found by given ID";
         private const string NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID = "No active tenant (project) found by given ID";
+        private const string APPS_ENDPOINT = "rest/apps/getAplicationsLastVersion";
+        private const string GET_APP_BY_ID_ENDPOINT = "rest/apps/getAppById";
         private const string DEVICES_ENDPOINT = "rest/devices";
         private const string DEVICE_ENDPOINT = "rest/device";
         private const string GET_JOB_ENDPOINT = "rest/job";
@@ -43,8 +47,9 @@ namespace PSModule
         private const string HTTP_PREFIX = "http://";
         private const string HTTPS_PREFIX = "https://";
         private const string JOB_ID = "job_id";
-        private const string UPDATE_JOB_DEVICE_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{{}},""devices"":[{{""deviceID"":""{1}""}}]}}";
-        private const string UPDATE_JOB_CDFD_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{1},""application"":{{""id"":""MC.Home""}},""devices"":[]}}";
+        private const string UPDATE_JOB_DEVICE_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{{}},""devices"":[{{""deviceID"":""{1}""}}],""application"":{{""id"":""{2}""}}, ""extraApps"":{3}}}";
+        private const string UPDATE_JOB_CDFD_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{1},""application"":{{""id"":""{2}""}},""devices"":[], ""extraApps"":{3}}}";
+        private const string MC_HOME = "MC.Home";
 
         private IClient _client;
         private IAuthenticator _auth;
@@ -236,33 +241,34 @@ namespace PSModule
                 }
                 if (_isParallelRunnerMode && ParallelRunnerConfig.EnvType == EnvType.Mobile && ParallelRunnerConfig.Devices.Any())
                 {
-                    List<string> warns = ValidateDevices().Result;
+                    List<string> warns = ValidateDeviceLines().Result;
                     if (warns.Any())
                     {
                         warns.ForEach(w => WriteWarning(w));
                     }
                     if (ParallelRunnerConfig.Devices.IsNullOrEmpty())
                     {
-                        ThrowTerminatingError(MISSING_OR_INVALID_DEVICES, nameof(ValidateDevices), ErrorCategory.InvalidData, nameof(ValidateDevices));
+                        ThrowTerminatingError(MISSING_OR_INVALID_DEVICES, nameof(ValidateDeviceLines), ErrorCategory.InvalidData, nameof(ValidateDeviceLines));
                     }
                 }
                 else if (!_isParallelRunnerMode)
                 {
-                    var device = ValidateDevice().Result;
+                    var device = ValidateDeviceLine().Result;
+                    string appId = ValidateAndSetApps();
                     Job job = GetOrCreateTempJob().Result;
                     List<Device> jobDevices = job.Devices ?? new();
                     if (device != null) // it means that the deviceId was provided
                     {
                         if (jobDevices.Count != 1 || !jobDevices[0].DeviceId.EqualsIgnoreCase(device.DeviceId))
                         {
-                            UpdateJobDevice(job.Id, device.DeviceId).Wait();
+                            UpdateJobDevice(job.Id, device.DeviceId, appId, GetExtraAppsJson4JobUpdate()).Wait();
                         }
                         _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, device)}";
                     }
-                    else // other device properties were provided
+                    else // deviceId was not provided, but other device properties
                     {
                         var cdfDetails = (CapableDeviceFilterDetails)_mobileConfig.Device;
-                        UpdateJobCDFDetails(job.Id, cdfDetails).Wait();
+                        UpdateJobCDFDetails(job.Id, cdfDetails, appId, GetExtraAppsJson4JobUpdate()).Wait();
                         _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, cdfDetails: cdfDetails)}";
                     }
                 }
@@ -337,7 +343,7 @@ namespace PSModule
             await client.DownloadStringTaskAsync(GOOGLE);
         }
 
-        private async Task<List<string>> ValidateDevices()
+        private async Task<List<string>> ValidateDeviceLines()
         {
             WriteDebug("Validating the devices....");
             List<string> warnings = new();
@@ -380,7 +386,7 @@ namespace PSModule
                 }
                 else
                 {
-                    ThrowTerminatingError($"No available devices found.", nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
+                    ThrowTerminatingError($"No available devices found.", nameof(ValidateDeviceLines), ErrorCategory.DeviceError, nameof(ValidateDeviceLines));
                 }
             }
             if (noIdDevices.Any())
@@ -397,7 +403,7 @@ namespace PSModule
             return warnings;
         }
 
-        private async Task<Device> ValidateDevice()
+        private async Task<Device> ValidateDeviceLine()
         {
             WriteDebug("Validating the device ....");
             Device device = null;
@@ -431,7 +437,7 @@ namespace PSModule
             }
             if (!err.IsNullOrEmpty())
             {
-                ThrowTerminatingError(err, nameof(ValidateDevice), ErrorCategory.InvalidData, nameof(ValidateDevice));
+                ThrowTerminatingError(err, nameof(ValidateDeviceLine), ErrorCategory.InvalidData, nameof(ValidateDeviceLine));
             }
             return device;
         }
@@ -463,7 +469,7 @@ namespace PSModule
             }
             else
             {
-                ThrowTerminatingError(LOGIN_FAILED, nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
+                ThrowTerminatingError(LOGIN_FAILED, nameof(ValidateDeviceLines), ErrorCategory.DeviceError, nameof(ValidateDeviceLines));
             }
         }
 
@@ -484,7 +490,7 @@ namespace PSModule
                 return res.Entities;
             }
             else
-                ThrowTerminatingError(res.Error, nameof(ValidateDevices), ErrorCategory.DeviceError, nameof(ValidateDevices));
+                ThrowTerminatingError(res.Error, nameof(ValidateDeviceLines), ErrorCategory.DeviceError, nameof(ValidateDeviceLines));
 
             return new List<Device>();
         }
@@ -495,7 +501,29 @@ namespace PSModule
             if (res.IsOK)
                 return res.Entity;
             else
-                ThrowTerminatingError(res.Error, nameof(ValidateDevice), ErrorCategory.DeviceError, nameof(ValidateDevice));
+                ThrowTerminatingError(res.Error, nameof(ValidateDeviceLine), ErrorCategory.DeviceError, nameof(ValidateDeviceLine));
+
+            return null;
+        }
+
+        private async Task<App> GetApp(string id)
+        {
+            var res = await _client.HttpGet<App>($"{GET_APP_BY_ID_ENDPOINT}/{id}", resType: ResType.DataEntity);
+            if (res.IsOK)
+                return res.Entity;
+            else
+                ThrowTerminatingError(res.Error, nameof(GetApp), ErrorCategory.NotSpecified, nameof(GetApp));
+
+            return null;
+        }
+
+        private async Task<IList<App>> GetAllApps()
+        {
+            var res = await _client.HttpGet<App>($"{APPS_ENDPOINT}");
+            if (res.IsOK)
+                return res.Entities;
+            else
+                ThrowTerminatingError(res.Error, nameof(GetAllApps), ErrorCategory.NotSpecified, nameof(GetAllApps));
 
             return null;
         }
@@ -554,18 +582,18 @@ namespace PSModule
             return job;
         }
 
-        private async Task UpdateJobDevice(string jobId, string deviceId)
+        private async Task UpdateJobDevice(string jobId, string deviceId, string appId, string jsonExtraApps)
         {
-            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_DEVICE_FORMAT, jobId, deviceId));
+            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_DEVICE_FORMAT, jobId, deviceId, appId, jsonExtraApps));
             if (!res.IsOK)
             {
                 ThrowTerminatingError(res.Error, nameof(UpdateJobDevice), ErrorCategory.NotSpecified, nameof(UpdateJobDevice));
             }
         }
 
-        private async Task UpdateJobCDFDetails(string jobId, CapableDeviceFilterDetails details)
+        private async Task UpdateJobCDFDetails(string jobId, CapableDeviceFilterDetails details, string appId, string jsonExtraApps)
         {
-            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_CDFD_FORMAT, jobId, details.ToJson(false, true)));
+            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_CDFD_FORMAT, jobId, details.ToJson(false, true), appId, jsonExtraApps));
             if (!res.IsOK)
             {
                 ThrowTerminatingError(res.Error, nameof(UpdateJobCDFDetails), ErrorCategory.NotSpecified, nameof(UpdateJobCDFDetails));
@@ -596,6 +624,60 @@ namespace PSModule
                 return true;
             var project = await GetProject(tenantId);
             return project?.IsActive == true;
+        }
+
+        private List<string> ValidateExtraAppLinesAndSetExtraApps(IList<App> allApps)
+        {
+            WriteDebug("Validating the apps ....");
+            List<string> warnings = new();
+            var extraAppLines = MobileConfig.ExtraAppLines;
+
+            foreach (var appLine in extraAppLines)
+            {
+                if (!appLine.IsAvailable(allApps.AsQueryable(), out App app, out string warning))
+                {
+                    warnings.Add($"No available app matches the criteria -> {warning}, therefore this app will be ignored");
+                }
+                _mobileConfig.ExtraApps.Add(new Tuple<App, bool>(app, appLine.IsPackaged));
+            }
+            return warnings;
+        }
+        private string ValidateAndSetApps()
+        {
+            string appId;
+            if (_mobileConfig.AppType == AppType.Custom)
+            {
+                var allApps = GetAllApps().Result;
+                if (!_mobileConfig.MainAppLine.IsAvailable(allApps.AsQueryable(), out App app, out string msg))
+                {
+                    ThrowTerminatingError($"{MISSING_OR_INVALID_APP}: {msg}", nameof(ValidateAndSetApps), ErrorCategory.InvalidData, nameof(ValidateAndSetApps));
+                }
+                _mobileConfig.App = new Tuple<App, bool>(app, false);
+                var warns = ValidateExtraAppLinesAndSetExtraApps(allApps);
+                if (warns.Any())
+                {
+                    warns.ForEach(w => WriteWarning(w));
+                }
+                appId = app.Id;
+            }
+            else
+            {
+                appId = _mobileConfig.AppType == AppType.System ? _mobileConfig.SysApp.GetStringValue() : MC_HOME;
+                var app = GetApp(appId).Result;
+                if (app == null)
+                {
+                    ThrowTerminatingError($"{MISSING_OR_INVALID_APP}: [{appId}]", nameof(ValidateAndSetApps), ErrorCategory.InvalidData, nameof(ValidateAndSetApps));
+                }
+                _mobileConfig.App = new Tuple<App, bool>(app, false);
+            }
+            return appId;
+        }
+
+        private string GetExtraAppsJson4JobUpdate()
+        {
+            List<string> list = new();
+            _mobileConfig.ExtraApps.ForEach(a => list.Add(a.Item1.Json4JobUpdate));
+            return $"[{string.Join(",", list)}]";
         }
     }
 }

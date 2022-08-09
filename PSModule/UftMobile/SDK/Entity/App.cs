@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using PSModule.Common;
 
 namespace PSModule.UftMobile.SDK.Entity
 {
@@ -50,29 +49,6 @@ namespace PSModule.UftMobile.SDK.Entity
 
         public App() { }
 
-        /*public App(IMobileCenterApplication iApp)
-        {
-            type = iApp.Type;
-            id = iApp.ID;
-            name = iApp.Name;
-            version = iApp.Version;
-            fileName = iApp.FileName;
-            identifier = iApp.Identifier;
-            instrumented = iApp.Instrumented;
-            counter = iApp.Counter;
-            appVersion = iApp.AppVersion;
-            appBuildVersion = iApp.AppBuildVersion;
-        }*/
-
-        public App(string app)
-        {
-            Instrumented = true;
-            int idxComma = app.IndexOf(Constants.COMMA);
-            if (idxComma >= 0)
-            {
-                Identifier = app.Substring(0, idxComma).Trim();
-                Version = app.Substring(idxComma + 1).Trim();
-            }
-        }
+        public string Json4JobUpdate => @$"{{""type"": ""{Type}"",""identifier"": ""{Identifier}""}}";
     }
 }
