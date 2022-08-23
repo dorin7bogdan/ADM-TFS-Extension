@@ -12,8 +12,6 @@ using PSModule.Models;
 using System.Xml.Linq;
 using System.Runtime.CompilerServices;
 using PSModule.UftMobile.SDK.UI;
-using PSModule.ParallelRunner.SDK.Entity;
-using PRHelper = PSModule.ParallelRunner.SDK.Util.Helper;
 namespace PSModule
 {
     using H = Helper;
@@ -48,7 +46,6 @@ namespace PSModule
 
         protected bool _enableFailedTestsReport;
         protected bool _isParallelRunnerMode;
-        protected List<TestRun> _parallelTestRuns = new();
         protected List<string> _rptPaths; // this field is instanciated in RunFromFileSystemTask\localTask.ps1 or ParallelRunnerTask\localTask.ps1 and passed to / filled in InvokeFSTaskCmdlet, then read in localTask.ps1
         protected MobileConfig _mobileConfig;
 
@@ -112,7 +109,6 @@ namespace PSModule
                 {
                     return;
                 }
-
                 //run the build task
                 var exitCode = Run(launcherPath, paramFileName);
                 var runType = (RunType)Enum.Parse(typeof(RunType), properties[RUN_TYPE]);
@@ -169,7 +165,7 @@ namespace PSModule
                                                 }
                                                 else
                                                 {
-                                                    LogError(new FileNotFoundException($"The report file '{RUN_RESULTS_XML}' is not found in '{path}'."), ErrorCategory.ResourceUnavailable);
+                                                    LogWarning($"The report file '{RUN_RESULTS_XML}' is not found in '{path}'.");
                                                 }
                                             }
                                         }
@@ -519,6 +515,10 @@ namespace PSModule
         protected void LogError(Exception ex, ErrorCategory categ = ErrorCategory.NotSpecified, [CallerMemberName] string methodName = "")
         {
             WriteError(new ErrorRecord(ex, $"{ex.GetType()}", categ, methodName));
+        }
+        protected void LogWarning(string warning)
+        {
+            WriteWarning(warning);
         }
     }
 }
