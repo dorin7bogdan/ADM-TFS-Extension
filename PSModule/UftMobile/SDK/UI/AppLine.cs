@@ -10,52 +10,51 @@ namespace PSModule.UftMobile.SDK.UI
     public class AppLine
     {
         private static readonly string[] _pipelineAttributes = new string[] { nameof(Id), nameof(Name), nameof(Identifier), nameof(packaged) };
-        
-        private string packaged;
 
+        [JsonProperty]
+        private string packaged = string.Empty;
+
+        //public properties are serialized by default
         public string Id { get; set; }
         public string Name { get; set; }
         public string Identifier { get; set; }
 
-        public bool IsPackaged => packaged != null && packaged.In(true, C.YES, C.TRUE);
+        public bool UsePackaged => packaged?.In(true, C.YES, C.TRUE) == true;
 
-
-        //if the first app is invalid then return false, because the main app is required
-        public static bool ParseLines(string strApps, out List<AppLine> apps, out List<string> invalidLines)
+        public static bool TryParse(string line, out AppLine app)
+        {
+            return TryParseLine(line.Trim(), out app);
+        }
+        public static void TryParse(string appsLines, out List<AppLine> apps, out List<string> invalidLines)
         {
             apps = new();
             invalidLines = new();
-            var lines = strApps.Split(C.LF_).Where(line => !line.IsNullOrWhiteSpace());
+            var lines = appsLines.Split(C.LF_).Where(line => !line.IsNullOrWhiteSpace());
             if (lines.Any())
             {
-                int x = 0;
                 foreach (var line in lines)
                 {
-                    if (TryParse(line, out var app))
+                    if (TryParseLine(line, out var extraApp))
                     {
-                        apps.Add(app);
+                        apps.Add(extraApp);
                     }
                     else
                     {
-                        if (x == 0)
-                            return false;
                         invalidLines.Add(line);
                     }
-                    x++;
                 }
             }
-            return true;
         }
 
-        private static bool TryParse(string strApp, out AppLine app)
+        private static bool TryParseLine(string line, out AppLine app)
         {
             app = null;
             bool ok = false;
-            if (IsValidLine(strApp))
+            if (IsValidLine(line))
             {
                 try
                 {
-                    app = JsonConvert.DeserializeObject<AppLine>($"{{{strApp}}}");
+                    app = JsonConvert.DeserializeObject<AppLine>($"{{{line}}}");
                     if (!app.packaged.IsNullOrWhiteSpace() && !app.packaged.In(true, C.YES, C.NO, C.TRUE, C.FALSE))
                         ok = false;
                     else

@@ -15,6 +15,7 @@ namespace PSModule.UftMobile.SDK.Entity
 
         public string Version { get; set; }
 
+        [JsonIgnore]
         public string FileName { get; set; }
 
         public string Identifier { get; set; } = MC_HOME;
@@ -22,6 +23,8 @@ namespace PSModule.UftMobile.SDK.Entity
         public bool Instrumented { get; set; }
 
         public string AppLocalPath { get; set; }
+
+        public string UrlScheme { get; set; }
 
         [JsonIgnore]
         public string Icon { get; set; }
@@ -34,12 +37,15 @@ namespace PSModule.UftMobile.SDK.Entity
 
         public int Counter { get; set; }
 
+        [JsonIgnore]
         public string AppVersion { get; set; }
 
+        [JsonIgnore]
         public string AppBuildVersion { get; set; }
 
         public string Source { get; set; }
 
+        [JsonIgnore]
         public Workspace[] Workspaces { get; set; }
 
         public override string ToString()
@@ -49,6 +55,6 @@ namespace PSModule.UftMobile.SDK.Entity
 
         public App() { }
 
-        public string Json4JobUpdate => @$"{{""type"": ""{Type}"",""identifier"": ""{Identifier}""}}";
+        public string Json4JobUpdate => @$"{{""type"":""{Type}"",""identifier"":""{Identifier}"",""instrumented"":{Instrumented}}}";
     }
 }

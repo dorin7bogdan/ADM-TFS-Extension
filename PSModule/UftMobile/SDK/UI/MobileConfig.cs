@@ -14,25 +14,23 @@ namespace PSModule.UftMobile.SDK.UI
         private readonly Device _device;
         private readonly AppConfig _appConfig;
         private readonly string _workDir;
-        private readonly List<Tuple<App, bool>> _extraApps = new();
+        private readonly List<App> _extraApps = new();
 
         public bool UseProxy => _useProxy;
         public ProxyConfig ProxyConfig => _proxyConfig;
         public Device Device => _device;
         public AppType AppType => _appConfig.AppType;
         public SysApp SysApp => _appConfig.SysApp;
-        public AppLine MainAppLine => _appConfig.AppLines[0];
-        public IEnumerable<AppLine> ExtraAppLines => _appConfig.AppLines.Skip(1);
-        public bool Install => _appConfig.Install;
-        public bool Restart => _appConfig.Restart;
-        public bool Uninstall => _appConfig.Uninstall;
+        public AppLine AppLine => _appConfig.AppLine;
+        public List<AppLine> ExtraAppLines => _appConfig.ExtraAppsLines;
+        public AppAction AppAction => _appConfig.AppAction;
         public DeviceMetrics DeviceMetrics => _appConfig.DeviceMetrics;
 
         public string WorkDir => _workDir;
         public string MobileInfo { get; set; }
 
-        public Tuple<App, bool> App { get; set; }
-        public List<Tuple<App, bool>> ExtraApps { get { return _extraApps; } }
+        public App App { get; set; }
+        public List<App> ExtraApps { get { return _extraApps; } }
 
         public MobileConfig(ServerConfig srvConfig, bool useProxy, ProxyConfig proxyConfig, Device device = null, AppConfig appConfig = null, string workDir = ""): base(srvConfig)
         {

@@ -35,6 +35,7 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 
 if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 	[Device]$device = $null
+	[AppLine]$app = $null
 	[List[AppLine]]$apps = $null
 	[DeviceMetrics]$metrics = $null
 	[bool]$mcInstall = $false
@@ -51,7 +52,8 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 
 	$mcAppType = Get-VstsInput -Name 'mcAppType'
 	$mcSysApp = $null
-	$mcApps = Get-VstsInput -Name 'mcApps'
+	$mcApp = Get-VstsInput -Name 'mcApp'
+	$mcExtraApps = Get-VstsInput -Name 'mcExtraApps'
 
 	[bool]$isBasicAuth = ($mcAuthType -eq "basic")
 	if ($isBasicAuth -and [string]::IsNullOrWhiteSpace($mcUsername)) {
@@ -64,13 +66,9 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		throw "Invalid device -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: DeviceID, Manufacturer, Model, OSType and OSVersion.";
 	} elseif ($mcAppType -eq "custom") {
 		[List[string]]$invalidAppLines = $null
-		[bool]$isFirstLineOK = [AppLine]::ParseLines($mcApps, [ref]$apps, [ref]$invalidAppLines)
-		if (!$isFirstLineOK) {
-			throw "The first UFT Mobile Application is invalid."
-		} else if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
-			foreach ($line in $invalidAppLines) {
-				Write-Warning "Invalid app line -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: ID, Identifier or Name (required) and Packaged (optional).";
-			}
+		[bool]$isOK = [AppLine]::TryParse($mcApp)
+		if (!$isOK) {
+			throw "The Main UFT Mobile Application is invalid."
 		}
 		if ($devices.Count -eq 0) {
 			throw "Missing or invalid devices."
@@ -81,6 +79,13 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 	} elseif ($mcAppType -eq "system") {
 		$mcSysApp = Get-VstsInput -Name 'mcSysApp'
 	}
+	[AppLine]::TryParse($mcExtraApps, [ref]$apps, [ref]$invalidAppLines)
+	if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
+		foreach ($line in $invalidAppLines) {
+			Write-Warning "Invalid app line -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: ID, Identifier or Name (required) and Packaged (optional).";
+		}
+	}
+
 	[bool]$mcLogDeviceMetrics = Get-VstsInput -Name 'mcLogDeviceMetrics' -AsBool
 	if ($mcLogDeviceMetrics) {
 		[bool]$mcCPU = Get-VstsInput -Name 'mcCPU' -AsBool
@@ -93,7 +98,8 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeDiskSpace, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
 	}
 
-	$appConfig = [AppConfig]::new($mcAppType, $mcSysApp, $apps, $metrics, $mcInstall, $mcRestart, $mcUninstall)
+	$appAction = [AppAction]::new($mcInstall, $mcUninstall, $mcRestart)
+	$appConfig = [AppConfig]::new($mcAppType, $mcSysApp, $app, $apps, $metrics, $appAction)
 
 	if ($isBasicAuth) {
 		$mobileSrvConfig = [ServerConfig]::new($mcServerUrl, $mcUsername, $mcPassword, $mcTenantId)

@@ -10,28 +10,25 @@ namespace PSModule.UftMobile.SDK.UI
     {
         private AppType _appType;
         private SysApp _sysApp;
+        private AppLine _app;
         private List<AppLine> _apps;
-        private bool _install;
-        private bool _restart;
-        private bool _uninstall;
+        private AppAction _appAction;
         private DeviceMetrics _deviceMetrics;
 
         public AppType AppType => _appType;
         public SysApp SysApp => _sysApp;
-        public List<AppLine> AppLines => _apps;
-        public bool Install => _install;
-        public bool Restart => _restart;
-        public bool Uninstall => _uninstall;
+        public AppLine AppLine => _app;
+        public List<AppLine> ExtraAppsLines => _apps ?? new();
+        public AppAction AppAction => _appAction;
         public DeviceMetrics DeviceMetrics => _deviceMetrics;
 
-        public AppConfig(string appType, string sysApp, List<AppLine> apps, DeviceMetrics deviceMetrics, bool install, bool restart, bool uninstall)
+        public AppConfig(string appType, string sysApp, AppLine app, List<AppLine> apps, DeviceMetrics deviceMetrics, AppAction appAction)
         {
             Enum.TryParse(appType, true, out _appType);
             Enum.TryParse(sysApp, true, out _sysApp);
+            _app = app;
             _apps = apps;
-            _install = install;
-            _restart = restart;
-            _uninstall = uninstall;
+            _appAction = appAction;
             _deviceMetrics = deviceMetrics;
         }
     }

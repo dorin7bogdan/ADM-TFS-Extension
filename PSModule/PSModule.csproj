@@ -161,6 +161,8 @@
     <Compile Include="UftMobile\SDK\Client\RestClient.cs" />
     <Compile Include="UftMobile\SDK\Entity\AccessToken.cs" />
     <Compile Include="UftMobile\SDK\Entity\App.cs" />
+    <Compile Include="UftMobile\SDK\Entity\AppAction.cs" />
+    <Compile Include="UftMobile\SDK\Entity\Header.cs" />
     <Compile Include="UftMobile\SDK\UI\AppLine.cs" />
     <Compile Include="UftMobile\SDK\Entity\CapableDeviceFilterDetails.cs" />
     <Compile Include="UftMobile\SDK\Entity\Device.cs" />
@@ -178,7 +180,7 @@
     <Compile Include="UftMobile\SDK\Interface\ILogger.cs" />
     <Compile Include="UftMobile\SDK\Response\Response.cs" />
     <Compile Include="UftMobile\SDK\UI\AppConfig.cs" />
-    <Compile Include="UftMobile\SDK\UI\DeviceMetrics.cs" />
+    <Compile Include="UftMobile\SDK\Entity\DeviceMetrics.cs" />
     <Compile Include="UftMobile\SDK\UI\MobileConfig.cs" />
     <Compile Include="UftMobile\SDK\UI\MobileResxConfig.cs" />
     <Compile Include="UftMobile\SDK\UI\ParallelRunnerConfig.cs" />

@@ -12,7 +12,7 @@
   "version": {
     "Major": 1,
     "Minor": 0,
-    "Patch": 0
+    "Patch": 2
   },
   "helpUrl": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-local.htm",
   "demands": "UFT_LAUNCHER",
@@ -240,13 +240,22 @@
       }
     },
     {
-      "name": "mcApps",
+      "name": "mcApp",
       "groupName": "mobileCenter",
-      "type": "multiLine",
-      "label": "UFT Mobile Applications",
-      "defaultValue": "",
+      "type": "string",
+      "label": "Main UFT Mobile Application",
+      "defaultValue": "Identifier: \"com.google.android.apps.maps\", Packaged:\"Yes\"",
       "required": false,
       "visibleRule": "mcAppType = custom",
+      "helpMarkDown": "TODO"
+    },
+    {
+      "name": "mcExtraApps",
+      "groupName": "mobileCenter",
+      "type": "multiLine",
+      "label": "Additional UFT Mobile Applications",
+      "defaultValue": "Identifier: \"app2\", Packaged:\"Yes\"\nIdentifier: \"app3\", Packaged:\"No\"",
+      "required": false,
       "helpMarkDown": "TODO"
     },
     {

@@ -47,5 +47,7 @@ namespace PSModule.Common
 
         public const char SLASH = '/';
         public const char BACK_SLASH = '\\';
+
+        public const string MC = "MC";
     }
 }

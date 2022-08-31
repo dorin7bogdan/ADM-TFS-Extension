@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using C = PSModule.Common.Constants;
 
 namespace PSModule
 {
@@ -22,6 +23,7 @@ namespace PSModule
     {
         private const string DEVICES_ENDPOINT = "rest/devices";
         private const string APPS_ENDPOINT = "rest/apps/getAplicationsLastVersion";
+        private const string APPS_QUERY_PARAMS = "excludeIosAgents=false&multiWorkspace=true";
         private const string REGISTERED = "registered";
         private const string UNREGISTERED = "unregistered";
         private const string AVAILABLE = "Available";
@@ -37,7 +39,6 @@ namespace PSModule
         private const string DEVICES_HEAD = "================================== Devices ===================================";
         private const string APPS_HEAD = "================================== Applications ==============================";
         private const string RESOURCES_BOTTOM = "==============================================================================";
-        private const string MC = "MC";
 
         private MobileResxConfig _config;
 
@@ -151,10 +152,10 @@ namespace PSModule
         {
             RunStatus status = RunStatus.FAILED;
             WriteObject(APPS_HEAD);
-            var res = await client.HttpGet<App>(APPS_ENDPOINT);
+            var res = await client.HttpGet<App>(APPS_ENDPOINT, query: APPS_QUERY_PARAMS);
             if (res.IsOK)
             {
-                var apps = res.Entities.Where(app => app.Source == MC);
+                var apps = res.Entities.Where(app => app.Source == C.MC);
                 if (apps.Any())
                 {
                     BaseWriteObject($"Available applications ({apps.Count()}):");
