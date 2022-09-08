@@ -1,7 +1,4 @@
 ﻿
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-
 namespace PSModule.Common
 {
     public static class Constants
@@ -36,11 +33,13 @@ namespace PSModule.Common
 
         public const string YES = "yes";
         public const string NO = "no";
+        public const string TRUE = "true";
+        public const string FALSE = "false";
 
         public const string HTTPS = "https";
 
-        public const string DOUBLE_QUOTE = @"""";
-        public const char DOUBLE_QUOTE_ = '"';
+        public const string DBL_QUOTE = @"""";
+        public const char DBL_QUOTE_ = '"';
         public static readonly char[] LF_ = new char[] { '\n' };
         public static readonly char[] COMMA_ = COMMA.ToCharArray();
         public static readonly char[] COLON_ = new char[] { COLON };
@@ -48,5 +47,7 @@ namespace PSModule.Common
 
         public const char SLASH = '/';
         public const char BACK_SLASH = '\\';
+
+        public const string MC = "MC";
     }
 }
