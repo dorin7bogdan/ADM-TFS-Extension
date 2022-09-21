@@ -68,7 +68,7 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 	} elseif ($mcAppType -eq "custom") {
 		[bool]$isOK = [AppLine]::TryParse($mcApp, [ref]$app)
 		if (!$isOK) {
-			throw "The Main UFT Mobile Application is invalid."
+			throw "The Main UFT Mobile Application is invalid. The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional)."
 		}
 	} elseif ($mcAppType -eq "system") {
 		$mcSysApp = Get-VstsInput -Name 'mcSysApp'
@@ -76,7 +76,7 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 	[AppLine]::TryParse($mcExtraApps, [ref]$apps, [ref]$invalidAppLines)
 	if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
 		foreach ($line in $invalidAppLines) {
-			Write-Warning "Invalid app line -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: ID, Identifier or Name (required) and Packaged (optional).";
+			Write-Warning "Invalid app line -> $($line). The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional).";
 		}
 	}
 	if ($app -or ($apps -and $apps.Count -gt 0))
@@ -94,7 +94,7 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		[bool]$mcWifiState = Get-VstsInput -Name 'mcWifiState' -AsBool
 		[bool]$mcThermalState = Get-VstsInput -Name 'mcThermalState' -AsBool
 		[bool]$mcFreeDiskSpace = Get-VstsInput -Name 'mcFreeDiskSpace' -AsBool
-		$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeDiskSpace, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
+		$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeMemory, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
 	}
 
 	$appAction = [AppAction]::new($mcInstall, $mcUninstall, $mcRestart)
