@@ -30,7 +30,7 @@ namespace PSModule.ParallelRunner.SDK.Entity
         public string Status { get; set; }
 
         [JsonProperty("report")]
-        public string ReportPath { get; set; }
+        public string RunResultsHtmlRelativePath { get; set; }
 
         [JsonProperty("environment.web.browser")]
         public string Browser { get; set; }
@@ -64,7 +64,7 @@ namespace PSModule.ParallelRunner.SDK.Entity
 
         public string GetAzureStatus()
         {
-            if (ReportPath.IsNullOrEmpty())
+            if (RunResultsHtmlRelativePath.IsNullOrEmpty())
                 return ERROR;
 
             if (Status.EqualsIgnoreCase(FAILED))
