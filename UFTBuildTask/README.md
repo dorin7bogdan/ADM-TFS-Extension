@@ -1,5 +1,8 @@
 # Integration with UFT One
-This extension enables you to run UFT One tests as part of your Azure DevOps build process. In a build step, run UFT One tests stored in the local file system or on an ALM server. When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running. After the build is complete, you can view comprehensive test results. 
+This extension enables you to run UFT One tests as part of your Azure DevOps build process. In a build step, run UFT One tests stored in the local file system or on an ALM server.    
+• When running test stored in the local file system, you can also run mobile tests. In addition, Parallel execution is available for mobile and web tests.    
+• When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
+After the build is complete, you can view comprehensive test results. 
 
 # What's new in UFT One Azure DevOps extension - version 4.*
 ##### Release date: September 2022
@@ -18,7 +21,7 @@ This plugin update includes the following:
 
 #### Setup
 1. Install this extension for the relevant Azure DevOps organization
-2. From our [GitHub][repository]: Browse a specific **release** (latest: 2.0.3)
+2. From our [GitHub][repository]: Browse a specific **release** (latest: 4.0.0)
 3. From [Azure DevOps][azure-devops]: Have an agent set up (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip, unpack.ps1 and optionally the .vsix file)    

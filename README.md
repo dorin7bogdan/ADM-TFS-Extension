@@ -1,5 +1,5 @@
 # UFT One Azure DevOps extension
-Enables you to run UFT One tests as a build in an Azure DevOps build process. This extension includes 4 tasks.
+Enables you to run UFT One tests as a build in an Azure DevOps build process. This extension includes 6 tasks.
 ## Table of contents
 1. [Integration with UFT One](#Integration-with-UFT-One)
 2. [Configuration](#Configuration)
@@ -7,7 +7,10 @@ Enables you to run UFT One tests as a build in an Azure DevOps build process. Th
 4. [Resources](#Additional-resources)
 
 # Integration with UFT One
-In a build step, run UFT One tests stored in the local file system or on an ALM server. When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests. After the build is complete, you can view comprehensive test results. 
+In a build step, run UFT One tests stored in the local file system or on an ALM server.    
+• When running test stored in the local file system, you can also run mobile tests. In addition, Parallel execution is available for mobile and web tests.    
+• When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
+After the build is complete, you can view comprehensive test results. 
 #  Configuration
 #### Prerequisites
 - UFT One (version >=**14.00**)
@@ -16,7 +19,7 @@ In a build step, run UFT One tests stored in the local file system or on an ALM 
 
 #### Setup
 1. From [Visual Studio Marketplace][marketplace]: Install the **UFT One Azure DevOps extension** for the relevant organization
-2. On our [GitHub][repository]: Navigate to a specific release (latest: **2.0.0**)
+2. On our [GitHub][repository]: Navigate to a specific release (latest: **4.0.0**)
 3. From [Azure DevOps][azure-devops]: Navigate to **agent pools** and set up an agent (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip & unpack.ps1)    
