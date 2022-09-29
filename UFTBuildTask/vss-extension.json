@@ -8,7 +8,7 @@
 		"id": "Microsoft.VisualStudio.Services",
 		"version": "[15.0,)"
 	}],
-	"description": "Enables you to run UFT One tests as a build in an Azure DevOps build process. This extension includes 4 tasks.",
+	"description": "Enables you to run UFT One tests as a build in an Azure DevOps build process. This extension includes 6 tasks.",
 	"categories": [
 		"Azure Pipelines"
 	],
@@ -36,7 +36,7 @@
 	],
 	"links": {
 		"home": {
-			"uri": "https://github.com/MicroFocus/ADM-TFS-Extension/releases/tag/2.0.0"
+			"uri": "https://github.com/MicroFocus/ADM-TFS-Extension/releases/tag/4.0.0"
 		},
 		"installation": {
 			"uri": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops.htm"
