@@ -21,7 +21,7 @@ This plugin update includes the following:
 
 #### Setup
 1. Install this extension for the relevant Azure DevOps organization
-2. From our [GitHub][repository]: Browse a specific **release** (latest: 4.0.0)
+2. From our [GitHub][repository]: Browse a specific **release** (latest: 4.0.1)
 3. From [Azure DevOps][azure-devops]: Have an agent set up (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip, unpack.ps1 and optionally the .vsix file)    
