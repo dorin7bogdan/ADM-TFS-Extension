@@ -12,11 +12,13 @@ using PSModule.Models;
 using System.Xml.Linq;
 using System.Runtime.CompilerServices;
 using PSModule.UftMobile.SDK.UI;
+
 namespace PSModule
 {
     using H = Helper;
     using H2 = ParallelRunner.SDK.Util.Helper;
     using C = Common.Constants;
+
     public abstract class AbstractLauncherTaskCmdlet : PSCmdlet
     {
         #region - Private Constants
@@ -143,7 +145,7 @@ namespace PSModule
                             createSummaryReportHandler(resdir, runType, listReport);
                         }
                         //get task return code
-                        runStatus = H.GetRunStatus(listReport);
+                        runStatus = exitCode == LauncherExitCode.Closed ? RunStatus.CANCELED : H.GetRunStatus(listReport);
                         int totalTests = H.GetNumberOfTests(listReport, out IDictionary<string, int> nrOfTests);
                         if (totalTests > 0)
                         {
@@ -160,7 +162,7 @@ namespace PSModule
                                             foreach (var tc in validTestCases)
                                             {
                                                 IOrderedEnumerable<string> dirs;
-                                                if (H2.HasParallelRunnerJsonReport(tc.ReportPath))
+                                                if (tc.AreTestRunsFromJsonRpt())
                                                 {
                                                     dirs = tc.TestRuns.Where(tr => H2.HasUftHtmlReport(tr.Path)).Select(tr => @$"{tr.Path}\Report").OrderBy(d => d);
                                                 }
@@ -184,7 +186,7 @@ namespace PSModule
                                         }
                                     }
                                 }
-                                if (_rptPaths.Any() && _enableFailedTestsReport)
+                                if (runStatus != RunStatus.CANCELED && _rptPaths.Any() && _enableFailedTestsReport)
                                 {
                                     //run junit report converter
                                     string outputFileReport = Path.Combine(resdir, JUNIT_REPORT_XML);
@@ -198,17 +200,16 @@ namespace PSModule
                             }
                         }
                     }
+                    if (errorToProcess.TryDequeue(out string error) && !error.StartsWith(C.LAUNCHER_EXITED_WITH_CODE))
+                    {
+                        ThrowTerminatingError(new ErrorRecord(new Exception(error), nameof(ProcessRecord), ErrorCategory.InvalidData, nameof(ProcessRecord)));
+                    }
                     CollateRetCode(resdir, (int)runStatus);
                 }
             }
             catch (IOException ioe)
             {
                 LogError(ioe);
-            }
-            catch (ThreadInterruptedException e)
-            {
-                LogError(e, ErrorCategory.OperationStopped);
-                Run(aborterPath, paramFileName);
             }
         }
 
@@ -240,7 +241,6 @@ namespace PSModule
         private LauncherExitCode? Run(string launcherPath, string paramFile)
         {
             Console.WriteLine($"{launcherPath} -paramfile {paramFile}");
-
             _launcherConsole.Clear();
             try
             {
@@ -261,10 +261,10 @@ namespace PSModule
                     RedirectStandardError = true
                 };
 
-                Process launcher = new Process { StartInfo = info };
+                Process launcher = new() { StartInfo = info };
 
-                launcher.OutputDataReceived += Launcher_OutputDataReceived;
-                launcher.ErrorDataReceived += Launcher_ErrorDataReceived;
+                launcher.OutputDataReceived += Proc_OutDataReceived;
+                launcher.ErrorDataReceived += Proc_ErrDataReceived;
 
                 launcher.Start();
 
@@ -280,16 +280,24 @@ namespace PSModule
                     }
                 }
 
-                launcher.OutputDataReceived -= Launcher_OutputDataReceived;
-                launcher.ErrorDataReceived -= Launcher_ErrorDataReceived;
+                launcher.OutputDataReceived -= Proc_OutDataReceived;
+                launcher.ErrorDataReceived -= Proc_ErrDataReceived;
 
                 launcher.WaitForExit();
-
+                
                 return (LauncherExitCode?)launcher.ExitCode;
             }
             catch (ThreadInterruptedException)
             {
-                throw;
+                return LauncherExitCode.Aborted;
+            }
+            catch (OperationCanceledException)
+            {
+                return LauncherExitCode.Aborted;
+            }
+            catch (PipelineStoppedException)
+            {
+                return LauncherExitCode.Aborted;
             }
             catch (Exception e)
             {
@@ -315,10 +323,10 @@ namespace PSModule
                     info.Arguments += $" \"{reportFolder}\"";
                 }
 
-                Process converter = new Process { StartInfo = info };
+                Process converter = new() { StartInfo = info };
 
-                converter.OutputDataReceived += Launcher_OutputDataReceived;
-                converter.ErrorDataReceived += Launcher_ErrorDataReceived;
+                converter.OutputDataReceived += Proc_OutDataReceived;
+                converter.ErrorDataReceived += Conv_ErrDataReceived;
 
                 converter.Start();
 
@@ -331,15 +339,10 @@ namespace PSModule
                     {
                         WriteObject(line);
                     }
-
-                    if (errorToProcess.TryDequeue(out line))
-                    {
-                        WriteObject(line);
-                    }
                 }
 
-                converter.OutputDataReceived -= Launcher_OutputDataReceived;
-                converter.ErrorDataReceived -= Launcher_ErrorDataReceived;
+                converter.OutputDataReceived -= Proc_OutDataReceived;
+                converter.ErrorDataReceived -= Conv_ErrDataReceived;
 
                 converter.WaitForExit();
             }
@@ -353,7 +356,15 @@ namespace PSModule
             }
         }
 
-        private void Launcher_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        private void Conv_ErrDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (!e.Data.IsNullOrWhiteSpace())
+            {
+                Console.WriteLine($"Report Converter error: {e.Data}");
+            }
+        }
+
+        private void Proc_ErrDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (!e.Data.IsNullOrWhiteSpace())
             {
@@ -361,7 +372,7 @@ namespace PSModule
             }
         }
 
-        private void Launcher_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        private void Proc_OutDataReceived(object sender, DataReceivedEventArgs e)
         {
             outputToProcess.Enqueue(e.Data);
         }
@@ -384,7 +395,7 @@ namespace PSModule
             string retCodeFilename = Path.Combine(resdir, fileName);
             try
             {
-                using StreamWriter file = new StreamWriter(retCodeFilename, true);
+                using StreamWriter file = new (retCodeFilename, true);
                 file.WriteLine(retCode.ToString());
             }
             catch (ThreadInterruptedException)
