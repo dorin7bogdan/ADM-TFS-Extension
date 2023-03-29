@@ -4,6 +4,21 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 • When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
 After the build is complete, you can view comprehensive test results. 
 
+# What's new in UFT One Azure DevOps extension - version 5.*
+##### Release date: March 2023
+This plugin update includes the following:
+
+**New features**
+- You can customize the format, or pattern, of the timestamp used for reporting in the Extensions tab.
+- When running a test saved on your local machine, you can now instruct Azure DevOps to stop the entire test run as soon as one test fails.
+- When running tests in parallel, you can connect to UFT Mobile / Digital Lab using access keys for authentication.
+- If you abort a UFT One File System Run or UFT One Parallel Test Run job in the middle of a test run, the results of the completed tests are saved in the local build folder.
+
+**Bug fixes / improvements**
+- [Parallel] Fixed error message output issues when using seat licenses to run parallel web tests.
+- [FS] Fixed the error that occurred when running duplicate tests.
+- [FS] Error messages displayed when you run local tests from .mtbx files, are now clearly defined and more user-friendly.
+
 # What's new in UFT One Azure DevOps extension - version 4.*
 ##### Release date: September 2022
 This plugin update includes the following:
@@ -21,7 +36,7 @@ This plugin update includes the following:
 
 #### Setup
 1. Install this extension for the relevant Azure DevOps organization
-2. From our [GitHub][repository]: Browse a specific **release** (latest: 4.0.1)
+2. From our [GitHub][repository]: Browse a specific **release** (latest: 5.0.0)
 3. From [Azure DevOps][azure-devops]: Have an agent set up (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip, unpack.ps1 and optionally the .vsix file)    
