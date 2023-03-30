@@ -5,7 +5,7 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 After the build is complete, you can view comprehensive test results. 
 
 # What's new in UFT One Azure DevOps extension - version 5.*
-##### Release date: March 2023
+##### Release date: April 2023
 This plugin update includes the following:
 
 **New features**
@@ -17,7 +17,7 @@ This plugin update includes the following:
 **Bug fixes / improvements**
 - [Parallel] Fixed error message output issues when using seat licenses to run parallel web tests.
 - [FS] Fixed the error that occurred when running duplicate tests.
-- [FS] Error messages displayed when you run local tests from .mtbx files, are now clearly defined and more user-friendly.
+- [FS] Error messages displayed when you run local tests from .mtbx files, are now clearly defined.
 
 # What's new in UFT One Azure DevOps extension - version 4.*
 ##### Release date: September 2022
