@@ -38,5 +38,5 @@ if($result)
 
 }else
 {
-     Write-Host "required Micro Focus UFT installed"
+     Write-Error "UFT One is not installed"
 }
