@@ -4,6 +4,15 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 • When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
 After the build is complete, you can view comprehensive test results. 
 
+# What's new in UFT One Azure DevOps extension - version 23.4
+##### Release date: October 2023
+This version includes the following minor changes:
+- Company Name rebranding
+  Micro Focus is now OpenText
+- Digital Lab renaming
+  UFT Mobile / Mobile Center is now Digital Lab
+- Add/Update Copyright and License Terms
+
 # What's new in UFT One Azure DevOps extension - version 5.*
 ##### Release date: April 2023
 This plugin update includes the following:
