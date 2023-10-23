@@ -7,10 +7,8 @@ After the build is complete, you can view comprehensive test results.
 # What's new in UFT One Azure DevOps extension - version 23.4
 ##### Release date: October 2023
 This version includes the following minor changes:
-- Company Name rebranding
-  Micro Focus is now OpenText
-- Digital Lab renaming
-  UFT Mobile / Mobile Center is now Digital Lab
+- Company Name rebranding: Micro Focus is now OpenText
+- Digital Lab renaming: UFT Mobile / Mobile Center is now Digital Lab
 - Add/Update Copyright and License Terms
 
 # What's new in UFT One Azure DevOps extension - version 5.*
