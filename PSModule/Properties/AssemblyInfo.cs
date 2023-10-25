@@ -1,5 +1,15 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿/*
+ * MIT License https://github.com/MicroFocus/ADM-TFS-Extension/blob/master/LICENSE
+ *
+ * Copyright 2016-2023 Open Text
+ *
+ * The only warranties for products and services of Open Text and its affiliates and licensors ("Open Text") are as may be set forth in the express warranty statements accompanying such products and services.
+ * Nothing herein should be construed as constituting an additional warranty.
+ * Open Text shall not be liable for technical or editorial errors or omissions contained herein. 
+ * The information contained herein is subject to change without notice.
+ */
+
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -8,9 +18,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("PSModule")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("OpenText")]
 [assembly: AssemblyProduct("PSModule")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCopyright("Copyright 2016-2023 Open Text")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +42,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0.0")]

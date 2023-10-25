@@ -14,12 +14,12 @@ After the build is complete, you can view comprehensive test results.
 #  Configuration
 #### Prerequisites
 - UFT One (version >=**14.00**)
-- Powershell (version **4** or later)
-- JRE installed
+- Powershell (version >=**5.1**)
+- JRE installed (required only if use the "UFT One ALM Lab Environment Preparation" task)
 
 #### Setup
 1. From [Visual Studio Marketplace][marketplace]: Install the **UFT One Azure DevOps extension** for the relevant organization
-2. On our [GitHub][repository]: Navigate to a specific release (latest: **5.0.0**)
+2. On our [GitHub][repository]: Navigate to a specific release (latest: **23.4.0**)
 3. From [Azure DevOps][azure-devops]: Navigate to **agent pools** and set up an agent (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip & unpack.ps1)    
