@@ -37,8 +37,8 @@ This plugin update includes the following:
 #  Configuration
 #### Prerequisites
 - UFT One (version  >=**14.00**)
-- Powershell (version **4** or **5.1** for extension version >=**2.0.0**)
-- JRE installed
+- Powershell (version >=**5.1**)
+- JRE installed (required only if use the "UFT One ALM Lab Environment Preparation" task)
 - Azure Powershell (for extension version >=**2.0.0**)
 
 #### Setup
