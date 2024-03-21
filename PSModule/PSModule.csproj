@@ -10,7 +10,7 @@
     <RootNamespace>PSModule</RootNamespace>
     <AssemblyName>PSModule</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>preview</LangVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
@@ -156,13 +156,13 @@
     <Compile Include="UftMobile\SDK\Entity\AccessToken.cs" />
     <Compile Include="UftMobile\SDK\Entity\App.cs" />
     <Compile Include="UftMobile\SDK\Entity\AppAction.cs" />
+    <Compile Include="UftMobile\SDK\Entity\CloudBrowser.cs" />
     <Compile Include="UftMobile\SDK\Entity\Header.cs" />
     <Compile Include="UftMobile\SDK\UI\AppLine.cs" />
     <Compile Include="UftMobile\SDK\Entity\CapableDeviceFilterDetails.cs" />
     <Compile Include="UftMobile\SDK\Entity\Device.cs" />
     <Compile Include="UftMobile\SDK\Entity\MobileInfo.cs" />
     <Compile Include="UftMobile\SDK\Entity\Job.cs" />
-    <Compile Include="UftMobile\SDK\Entity\Project.cs" />
     <Compile Include="UftMobile\SDK\Entity\Workspace.cs" />
     <Compile Include="UftMobile\SDK\Enums\AppType.cs" />
     <Compile Include="UftMobile\SDK\Enums\AuthType.cs" />
@@ -175,8 +175,11 @@
     <Compile Include="UftMobile\SDK\Response\Response.cs" />
     <Compile Include="UftMobile\SDK\UI\AppConfig.cs" />
     <Compile Include="UftMobile\SDK\Entity\DeviceMetrics.cs" />
-    <Compile Include="UftMobile\SDK\UI\MobileConfig.cs" />
-    <Compile Include="UftMobile\SDK\UI\MobileResxConfig.cs" />
+    <Compile Include="UftMobile\SDK\UI\CloudBrowserConfig.cs" />
+    <Compile Include="UftMobile\SDK\UI\IConfig.cs" />
+    <Compile Include="UftMobile\SDK\UI\ServerConfigEx.cs" />
+    <Compile Include="UftMobile\SDK\UI\DeviceConfig.cs" />
+    <Compile Include="UftMobile\SDK\UI\LabResxConfig.cs" />
     <Compile Include="UftMobile\SDK\UI\ParallelRunnerConfig.cs" />
     <Compile Include="UftMobile\SDK\UI\ProxyConfig.cs" />
     <Compile Include="UftMobile\SDK\UI\ServerConfig.cs" />

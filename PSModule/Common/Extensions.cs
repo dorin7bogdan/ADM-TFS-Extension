@@ -40,7 +40,7 @@ namespace PSModule
 		};
 		public static V GetValueOrDefault<K, V>(this IDictionary<K, V> dictionary, K key, V defaultValue = default)
 		{
-			if (dictionary.TryGetValue(key, out var value))
+			if (dictionary.TryGetValue(key, out V value))
 			{
 				return value;
 			}
@@ -81,12 +81,25 @@ namespace PSModule
 			return In(str, values);
 		}
 
-		public static bool In<T>(this T obj, params T[] values)
+        public static bool In(this string str, IList<string> values, bool ignoreCase = false)
+        {
+            if (ignoreCase)
+            {
+                return values?.Any((string s) => EqualsIgnoreCase(str, s)) ?? (str == null);
+            }
+            return In(str, values);
+        }
+
+        public static bool In<T>(this T obj, params T[] values)
 		{
 			return values?.Any((T o) => Equals(obj, o)) ?? false;
 		}
 
-		public static bool IsNullOrEmpty<T>(this T[] arr)
+        public static bool In<T>(this T obj, IList<T> values)
+        {
+            return values?.Any((T o) => Equals(obj, o)) ?? false;
+        }
+        public static bool IsNullOrEmpty<T>(this T[] arr)
 		{
 			return arr == null || arr.Length == 0;
 		}
@@ -122,9 +135,17 @@ namespace PSModule
 				action(item);
 			}
 		}
-		public static string GetMD5Hash(this string text)
+        public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T, int> action)
+        {
+			int x = 0;
+            foreach (T item in enumeration)
+            {
+                action(item, ++x);
+            }
+        }
+        public static string GetMD5Hash(this string text)
 		{
-			using var md5 = MD5.Create();
+			using MD5 md5 = MD5.Create();
 			byte[] computedHash = md5.ComputeHash(Encoding.UTF8.GetBytes(text));
 			return new SoapHexBinary(computedHash).ToString();
 		}
@@ -133,7 +154,7 @@ namespace PSModule
 		{
 			try
 			{
-				var uriBuilder = new UriBuilder(uri);
+                UriBuilder uriBuilder = new(uri);
 				uriBuilder.Path = Path.Combine(uriBuilder.Path, suffix);
 				return Uri.UnescapeDataString(uriBuilder.ToString());
 			}
@@ -146,7 +167,7 @@ namespace PSModule
 		}
 		public static T DeserializeXML<T>(this string xml) where T : class
 		{
-			var ser = new XmlSerializer(typeof(T));
+            XmlSerializer ser = new(typeof(T));
 			using StringReader sr = new(xml);
 			return (T)ser.Deserialize(sr);
 		}
@@ -213,7 +234,7 @@ namespace PSModule
 
 		public static string Escape(this string json, char[] escapeChars)
 		{
-			var output = new StringBuilder(json.Length);
+            StringBuilder output = new(json.Length);
 			foreach (char c in json)
 			{
                 output.Append(escapeChars.Contains(c) ? @$"\{c}" : $"{c}");
@@ -224,7 +245,8 @@ namespace PSModule
 
         public static string EscapeDblQuotes(this string json)
         {
-            var output = new StringBuilder(json.Length);
+			if (json == null) return null;
+            StringBuilder output = new(json.Length);
             foreach (char c in json)
             {
                 output.Append(c == C.DBL_QUOTE_ ? @$"\{c}" : $"{c}");
@@ -237,6 +259,5 @@ namespace PSModule
         {
             return testCase?.TestRuns?.Any(tr => tr.Id == 0) == true;
         }
-
     }
 }

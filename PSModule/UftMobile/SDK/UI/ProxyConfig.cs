@@ -9,18 +9,17 @@
  * The information contained herein is subject to change without notice.
  */
 
+using PSModule.UftMobile.SDK.Enums;
 
 namespace PSModule.UftMobile.SDK.UI
 {
-    public class ProxyConfig: ServerConfig
+    public class ProxyConfig(ServerConfig srvConfig, bool useCredentials)
     {
-        private readonly bool _useCredentials;
-
-        public bool UseCredentials => _useCredentials;
-
-        public ProxyConfig(ServerConfig srvConfig, bool useCredentials) : base(srvConfig)
-        {
-            _useCredentials = useCredentials;
-        }
+        public bool UseCredentials => useCredentials;
+        public AuthType AuthType => srvConfig.AuthType;
+        public string ServerUrl => srvConfig.ServerUrl;
+        public string UsernameOrClientId => srvConfig.UsernameOrClientId;
+        public string PasswordOrSecret => srvConfig.PasswordOrSecret;
+        public int TenantId => srvConfig.TenantId;
     }
 }

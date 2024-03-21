@@ -40,7 +40,6 @@ namespace PSModule
         private const string MISSING_OR_INVALID_DEVICE = "Missing or invalid device";
         private const string FAILED_TO_CREATE_TEMP_JOB = "Digital Lab server failed to create a temporary job";
         private const string NO_JOB_FOUND_BY_GIVEN_ID = "No job found by given ID";
-        private const string NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID = "No active tenant (project) found by given ID";
         private const string APPS_ENDPOINT = "rest/apps/getAplicationsLastVersion";
         private const string APPS_QUERY_PARAMS = "excludeIosAgents=false&multiWorkspace=true";
         private const string GET_APP_BY_ID_ENDPOINT = "rest/apps/getAppById";
@@ -50,7 +49,6 @@ namespace PSModule
         private const string CREATE_TEMP_JOB_ENDPOINT = "rest/job/createTempJob";
         //private const string JOB_UPDATE_DEVICES_ENDPOINT = "rest/job/updateDevices";
         private const string JOB_UPDATE_ENDPOINT = "rest/job/updateJob";
-        private const string GET_PROJECTS_ENPOINT = "rest/v1/project?includeManagement=false";
         private const string REGISTERED = "registered";
         private const string UNREGISTERED = "unregistered";
         private const string HEAD = "HEAD";
@@ -60,7 +58,7 @@ namespace PSModule
         private const string HTTPS_PREFIX = "https://";
         private const string JOB_ID = "job_id";
         private const string UPDATE_JOB_DEVICE_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{{}},""devices"":[{{""deviceID"":""{1}""}}],""application"":{2},""extraApps"":{3},""header"":""{4}""}}";
-        private const string UPDATE_JOB_CDFD_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{1},""application"":{2},""devices"":[],""extraApps"":{3},""header"":""{4}""}";
+        private const string UPDATE_JOB_CDFD_FORMAT = @"{{""id"":""{0}"",""capableDeviceFilterDetails"":{1},""application"":{2},""devices"":[],""extraApps"":{3},""header"":""{4}""}}";
         private const string MC_HOME = "MC.Home";
         private IClient _client;
         private IAuthenticator _auth;
@@ -112,7 +110,31 @@ namespace PSModule
         }
 
         [Parameter(Position = 11)]
-        public ParallelRunnerConfig ParallelRunnerConfig { get; set; }
+        public List<IConfig> Configs
+        {
+            set
+            {
+                foreach (IConfig config in value)
+                {
+                    if (config is ParallelRunnerConfig prConfig)
+                    {
+                        _parallelRunnerConfig = prConfig;
+                    }
+                    else if (config is ServerConfigEx srvConfigEx)
+                    {
+                        _dlServerConfig = srvConfigEx;
+                    }
+                    else if (config is DeviceConfig dConfig)
+                    {
+                        _deviceConfig = dConfig;
+                    }
+                    else if (config is CloudBrowserConfig cbConfig)
+                    {
+                        _cloudBrowserConfig = cbConfig;
+                    }
+                }
+            }
+        }
 
         [Parameter(Position = 12)]
         public List<string> ReportPaths
@@ -124,18 +146,9 @@ namespace PSModule
         }
 
         [Parameter(Position = 13)]
-        public MobileConfig MobileConfig
-        {
-            set
-            {
-                _mobileConfig = value;
-            }
-        }
-
-        [Parameter(Position = 14)]
         public bool CancelRunOnFailure { get; set; }
 
-        [Parameter(Position = 15)]
+        [Parameter(Position = 14)]
         public string TimestampPattern
         {
             set
@@ -176,10 +189,10 @@ namespace PSModule
             builder.SetUseParallelRunner(_isParallelRunnerMode);
             if (_isParallelRunnerMode)
             {
-                builder.SetParallelRunnerEnvType(ParallelRunnerConfig.EnvType);
-                if (ParallelRunnerConfig.EnvType == EnvType.Mobile)
+                builder.SetParallelRunnerEnvType(_parallelRunnerConfig.EnvType);
+                if (_parallelRunnerConfig.EnvType == EnvType.Mobile)
                 {
-                    var devices = ParallelRunnerConfig.Devices;
+                    var devices = _parallelRunnerConfig.Devices;
                     if (devices.Any())
                     {
                         for (int i = 0; i < tests.Length; i++)
@@ -191,9 +204,9 @@ namespace PSModule
                         }
                     }
                 }
-                else if (ParallelRunnerConfig.EnvType == EnvType.Web)
+                else if (_parallelRunnerConfig.EnvType == EnvType.Web)
                 {
-                    var browsers = ParallelRunnerConfig.Browsers;
+                    var browsers = _parallelRunnerConfig.Browsers;
                     if (browsers.Any())
                     {
                         for (int i = 0; i < tests.Length; i++)
@@ -206,10 +219,9 @@ namespace PSModule
                     }
                 }
             }
-            if (_mobileConfig != null)
-            {
-                builder.SetMobileConfig(_mobileConfig);
-            }
+            builder.SetDigitalLabSrvConfig(_dlServerConfig);
+            builder.SetMobileConfig(_deviceConfig);
+            builder.SetCloudBrowserConfig(_cloudBrowserConfig);
 
             return builder.GetProperties();
         }
@@ -221,19 +233,20 @@ namespace PSModule
 
         protected override void ProcessRecord()
         {
-            if (_mobileConfig != null)
+            if (_dlServerConfig != null)
             {
                 InitRestClientAndLogin().Wait();
-                if (!IsValidTenantId().Result)
+                //if DL server type is ValueEdge then GET project fails
+                /*if (!IsValidTenantId().Result)
                 {
-                    ThrowTerminatingError($"{NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID}: {_mobileConfig.TenantId}", nameof(IsValidTenantId), ErrorCategory.InvalidData, nameof(IsValidTenantId));
-                }
+                    ThrowTerminatingError($"{NO_ACTIVE_TENANT_FOUND_BY_GIVEN_ID}: {_dlServerConfig.TenantId}", nameof(IsValidTenantId), ErrorCategory.InvalidData, nameof(IsValidTenantId));
+                }*/
 
-                if (_mobileConfig.UseProxy)
+                if (_dlServerConfig.UseProxy)
                 {
                     try
                     {
-                        CheckProxy(_mobileConfig.ProxyConfig).Wait();
+                        CheckProxy(_dlServerConfig.ProxyConfig).Wait();
                     }
                     catch (WebException wex)
                     {
@@ -247,40 +260,58 @@ namespace PSModule
                         ThrowTerminatingError(err, nameof(CheckProxy), ErrorCategory.AuthenticationError, nameof(CheckProxy));
                     }
                 }
-                if (_isParallelRunnerMode && ParallelRunnerConfig.EnvType == EnvType.Mobile && ParallelRunnerConfig.Devices.Any())
+                if (_isParallelRunnerMode && _parallelRunnerConfig.EnvType == EnvType.Mobile && _parallelRunnerConfig.Devices.Any())
                 {
                     List<string> warns = ValidateDeviceLines().Result;
                     if (warns.Any())
                     {
                         warns.ForEach(w => WriteWarning(w));
                     }
-                    if (ParallelRunnerConfig.Devices.IsNullOrEmpty())
+                    if (_parallelRunnerConfig.Devices.IsNullOrEmpty())
                     {
                         ThrowTerminatingError(MISSING_OR_INVALID_DEVICES, nameof(ValidateDeviceLines), ErrorCategory.InvalidData, nameof(ValidateDeviceLines));
                     }
                 }
                 else if (!_isParallelRunnerMode)
                 {
-                    var device = ValidateDeviceLine().Result;
-                    ValidateAndSetApps();
-                    var app = _mobileConfig.App;
-                    var extraApps = _mobileConfig.ExtraApps;
-                    string hdr = GetHeaderJson();
-                    Job job = GetOrCreateTempJob().Result;
-                    List<Device> jobDevices = job.Devices ?? new();
-                    if (device != null) // it means that the deviceId was provided
+                    try
                     {
-                        if (jobDevices.Count != 1 || !jobDevices[0].DeviceId.EqualsIgnoreCase(device.DeviceId))
+                        if (_deviceConfig != null)
                         {
-                            UpdateJobDevice(job.Id, device.DeviceId, hdr).Wait();
+                            var device = ValidateDeviceLine().Result;
+                            ValidateAndSetApps();
+                            var app = _deviceConfig.App;
+                            var extraApps = _deviceConfig.ExtraApps;
+                            string hdr = GetHeaderJson();
+                            Job job = GetOrCreateTempJob().Result;
+                            List<Device> jobDevices = job.Devices ?? [];
+                            if (device != null) // it means that the deviceId was provided
+                            {
+                                if (jobDevices.Count != 1 || !jobDevices[0].DeviceId.EqualsIgnoreCase(device.DeviceId))
+                                {
+                                    UpdateJobDevice(job.Id, device.DeviceId, hdr).Wait();
+                                }
+                                _deviceConfig.MobileInfo = $"{new MobileInfo(job.Id, device, app: app, extraApps: extraApps, hdr: hdr)}";
+                            }
+                            else // deviceId was not provided, but other device properties
+                            {
+                                var cdfDetails = (CapableDeviceFilterDetails)_deviceConfig.Device;
+                                UpdateJobCDFDetails(job.Id, cdfDetails, hdr).Wait();
+                                _deviceConfig.MobileInfo = $"{new MobileInfo(job.Id, cdfDetails: cdfDetails, app: app, extraApps: extraApps, hdr: hdr)}";
+                            }
                         }
-                        _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, device, app: app, extraApps: extraApps, hdr: hdr)}";
+                        else if (_cloudBrowserConfig != null)
+                        {
+                            ValidateCloudBrowser();
+                        }
                     }
-                    else // deviceId was not provided, but other device properties
+                    catch (Exception ex)
                     {
-                        var cdfDetails = (CapableDeviceFilterDetails)_mobileConfig.Device;
-                        UpdateJobCDFDetails(job.Id, cdfDetails, hdr).Wait();
-                        _mobileConfig.MobileInfo = $"{new MobileInfo(job.Id, cdfDetails: cdfDetails, app: app, extraApps: extraApps, hdr: hdr)}";
+                        ex = ex.InnerException ?? ex;
+                        string err = ex is WebException wex ? GetErrorFromWebException(wex) : $"Error: {ex.Message}";
+                        WriteDebug($"{ex.GetType().Name}: {ex.Message}");
+                        WriteDebug(ex.StackTrace);
+                        ThrowTerminatingError(err, nameof(ProcessRecord), ErrorCategory.NotSpecified, nameof(ProcessRecord));
                     }
                 }
             }
@@ -354,10 +385,34 @@ namespace PSModule
             await client.DownloadStringTaskAsync(GOOGLE);
         }
 
+        private void ValidateCloudBrowser()
+        {
+            WriteDebug("Validating the cloud browser fields ....");
+            CloudBrowsers res = GetCloudBrowsers().Result;
+
+            if (res == null)
+                ThrowTerminatingError($"Unexpected error during cloud browser validation", nameof(ValidateCloudBrowser), ErrorCategory.InvalidData, nameof(ValidateCloudBrowser));
+            else
+            {
+                if (!res.Browsers.Any(b => b.Type.EqualsIgnoreCase(_cloudBrowserConfig.Browser) && b.IsValidVersionOrTag(_cloudBrowserConfig.Version)))
+                {
+                    ThrowTerminatingError($"Invalid Cloud Browser: \"{_cloudBrowserConfig.Browser}\" with Version/Tag: \"{_cloudBrowserConfig.Version}\"", nameof(ValidateCloudBrowser), ErrorCategory.InvalidData, nameof(ValidateCloudBrowser));
+                }
+                if (!_cloudBrowserConfig.OS.In(res.OS, true))
+                {
+                    ThrowTerminatingError($"Invalid Cloud Browser OS: \"{_cloudBrowserConfig.OS}\"", nameof(ValidateCloudBrowser), ErrorCategory.InvalidData, nameof(ValidateCloudBrowser));
+                }
+                if (!_cloudBrowserConfig.Region.In(res.Regions, true))
+                {
+                    ThrowTerminatingError($"Invalid Cloud Browser Region: \"{_cloudBrowserConfig.Region}\"", nameof(ValidateCloudBrowser), ErrorCategory.InvalidData, nameof(ValidateCloudBrowser));
+                }
+            }
+        }
+
         private async Task<List<string>> ValidateDeviceLines()
         {
             WriteDebug("Validating the devices....");
-            List<string> warnings = new();
+            List<string> warnings = [];
             GetGroupedDevices(out IList<Device> idDevices, out IList<Device> noIdDevices);
             var devicesWithIdAndOtherProps = idDevices.Where(d => d.HasSecondaryProperties());
             if (devicesWithIdAndOtherProps.Any())
@@ -377,7 +432,7 @@ namespace PSModule
                     {
                         foreach (var id in invalidDeviceIds)
                         {
-                            ParallelRunnerConfig.Devices.RemoveAll(d => d.DeviceId == id);
+                            _parallelRunnerConfig.Devices.RemoveAll(d => d.DeviceId == id);
                             deviceIds.Remove(id);
                             warnings.Add($@"The device with ID ""{id}"" is disconnected, therefore no test run will start for this device");
                         }
@@ -390,7 +445,7 @@ namespace PSModule
                     {
                         foreach (var id in invalidDeviceIds)
                         {
-                            ParallelRunnerConfig.Devices.RemoveAll(d => d.DeviceId == id);
+                            _parallelRunnerConfig.Devices.RemoveAll(d => d.DeviceId == id);
                             warnings.Add(@$"No available device found by ID ""{id}"", therefore no test run will start for this device");
                         }
                     }
@@ -406,7 +461,7 @@ namespace PSModule
                 {
                     if (!device.IsAvailable(onlineDevices.AsQueryable(), out string msg))
                     {
-                        ParallelRunnerConfig.Devices.Remove(device);
+                        _parallelRunnerConfig.Devices.Remove(device);
                         warnings.Add($"No available device matches the criteria -> {msg}, therefore no test run will start for this device");
                     }
                 }
@@ -418,7 +473,7 @@ namespace PSModule
         {
             WriteDebug("Validating the device ....");
             Device device = null;
-            Device dev = _mobileConfig.Device;
+            Device dev = _deviceConfig.Device;
             string err = null;
             if (dev == null)
             {
@@ -462,7 +517,7 @@ namespace PSModule
 
         private void GetGroupedDevices(out IList<Device> idDevices, out IList<Device> noIdDevices)
         {
-            var devices = ParallelRunnerConfig.Devices.GroupBy(d => d.DeviceId.IsNullOrWhiteSpace())?.ToList() ?? new();
+            var devices = _parallelRunnerConfig.Devices.GroupBy(d => d.DeviceId.IsNullOrWhiteSpace())?.ToList() ?? new();
             noIdDevices = devices.FirstOrDefault(g => g.Key)?.ToList() ?? new();
             idDevices = devices.FirstOrDefault(g => !g.Key)?.ToList() ?? new();
         }
@@ -470,9 +525,9 @@ namespace PSModule
         private async Task InitRestClientAndLogin()
         {
             bool isDebug = (ActionPreference)GetVariableValue(DEBUG_PREFERENCE) != ActionPreference.SilentlyContinue;
-            Credentials cred = new(_mobileConfig.UsernameOrClientId, _mobileConfig.PasswordOrSecret, _mobileConfig.TenantId);
-            _client = new RestClient(_mobileConfig.ServerUrl, cred, new ConsoleLogger(isDebug), _mobileConfig.AuthType);
-            _auth = _mobileConfig.AuthType == AuthType.Basic ? new BasicAuthenticator() : new OAuth2Authenticator();
+            Credentials cred = new(_dlServerConfig.UsernameOrClientId, _dlServerConfig.PasswordOrSecret, _dlServerConfig.TenantId);
+            _client = new RestClient(_dlServerConfig.ServerUrl, cred, new ConsoleLogger(isDebug), _dlServerConfig.AuthType);
+            _auth = _dlServerConfig.AuthType == AuthType.Basic ? new BasicAuthenticator() : new OAuth2Authenticator();
             bool ok = await _auth.Login(_client);
             if (ok)
             {
@@ -503,7 +558,7 @@ namespace PSModule
             else
                 ThrowTerminatingError(res.Error, nameof(ValidateDeviceLines), ErrorCategory.DeviceError, nameof(ValidateDeviceLines));
 
-            return new List<Device>();
+            return [];
         }
 
         private async Task<Device> GetDevice(string id)
@@ -575,7 +630,7 @@ namespace PSModule
         private async Task<Job> GetOrCreateTempJob()
         {
             Job job = null;
-            string workDir = _mobileConfig.WorkDir;
+            string workDir = _deviceConfig.WorkDir;
             string jobIdFile = Path.Combine(workDir, JOB_ID);
             if (File.Exists(jobIdFile))
             {
@@ -595,7 +650,7 @@ namespace PSModule
 
         private async Task UpdateJobDevice(string jobId, string deviceId, string hdr)
         {
-            string jsonApp = _mobileConfig.App.Json4JobUpdate;
+            string jsonApp = _deviceConfig.App.Json4JobUpdate;
             string jsonExtraApps = GetExtraAppsJson4JobUpdate();
             var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_DEVICE_FORMAT, jobId, deviceId, jsonApp, jsonExtraApps, hdr.EscapeDblQuotes()));
             if (!res.IsOK)
@@ -606,53 +661,29 @@ namespace PSModule
 
         private async Task UpdateJobCDFDetails(string jobId, CapableDeviceFilterDetails details, string hdr)
         {
-            string jsonApp = _mobileConfig.App.Json4JobUpdate;
+            string jsonApp = _deviceConfig.App?.Json4JobUpdate;
             string jsonExtraApps = GetExtraAppsJson4JobUpdate();
-            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, string.Format(UPDATE_JOB_CDFD_FORMAT, jobId, details.ToJson(false, true), jsonApp, jsonExtraApps, hdr.EscapeDblQuotes()));
+            string jsonDetails = details?.ToJson(false);
+
+            string body = string.Format(UPDATE_JOB_CDFD_FORMAT, jobId, jsonDetails, jsonApp, jsonExtraApps, hdr?.EscapeDblQuotes());
+            var res = await _client.HttpPost(JOB_UPDATE_ENDPOINT, body);
             if (!res.IsOK)
             {
                 ThrowTerminatingError(res.Error, nameof(UpdateJobCDFDetails), ErrorCategory.NotSpecified, nameof(UpdateJobCDFDetails));
             }
         }
-        private async Task<Project[]> GetProjects()
-        {
-            var res = await _client.HttpGet<Project>($"{GET_PROJECTS_ENPOINT}", resType: ResType.Array);
-            if (res.IsOK)
-            {
-                return res.Entities;
-            }
-            else
-            {
-                return new Project[0];
-            }
-        }
-        private async Task<Project> GetProject(int tenantId)
-        {
-            var projects = await GetProjects();
-            return projects.FirstOrDefault(p => p.Id == tenantId);
-        }
-
-        private async Task<bool> IsValidTenantId()
-        {
-            int tenantId = _mobileConfig.TenantId;
-            if (tenantId == 0)
-                return true;
-            var project = await GetProject(tenantId);
-            return project?.IsActive == true;
-        }
-
         private List<string> ValidateExtraAppLinesAndSetExtraApps(IEnumerable<App> allApps)
         {
             WriteDebug("Validating the extra apps ....");
-            List<string> warnings = new();
-            var extraAppLines = _mobileConfig.ExtraAppLines;
+            List<string> warnings = [];
+            var extraAppLines = _deviceConfig.ExtraAppLines;
 
             foreach (var appLine in extraAppLines)
             {
                 if (appLine.IsAvailable(allApps.AsQueryable(), out App app, out string warning))
                 {
                     app.Instrumented = appLine.UsePackaged;
-                    _mobileConfig.ExtraApps.Add(app);
+                    _deviceConfig.ExtraApps.Add(app);
                 }
                 else
                 {
@@ -664,25 +695,25 @@ namespace PSModule
         private void ValidateAndSetApps()
         {
             App app;
-            if (_mobileConfig.AppType != AppType.Custom)
+            if (_deviceConfig.AppType != AppType.Custom)
             {
-                var appId = _mobileConfig.AppType == AppType.System ? _mobileConfig.SysApp.GetStringValue() : MC_HOME;
+                var appId = _deviceConfig.AppType == AppType.System ? _deviceConfig.SysApp.GetStringValue() : MC_HOME;
                 app = GetApp(appId).Result;
                 if (app == null)
                 {
                     ThrowTerminatingError($"{MISSING_OR_INVALID_APP}: [{appId}]", nameof(ValidateAndSetApps), ErrorCategory.InvalidData, nameof(ValidateAndSetApps));
                 }
-                _mobileConfig.App = app;
+                _deviceConfig.App = app;
             }
-            if (_mobileConfig.AppLine != null || _mobileConfig.ExtraAppLines.Any())
+            if (_deviceConfig.AppLine != null || _deviceConfig.ExtraAppLines.Any())
             {
                 var allApps = GetAllApps().Result;
-                if (_mobileConfig.AppType == AppType.Custom)
+                if (_deviceConfig.AppType == AppType.Custom)
                 {
-                    if (_mobileConfig.AppLine.IsAvailable(allApps.AsQueryable(), out app, out string msg))
+                    if (_deviceConfig.AppLine.IsAvailable(allApps.AsQueryable(), out app, out string msg))
                     {
-                        app.Instrumented = _mobileConfig.AppLine.UsePackaged;
-                        _mobileConfig.App = app;
+                        app.Instrumented = _deviceConfig.AppLine.UsePackaged;
+                        _deviceConfig.App = app;
                     }
                     else
                     {
@@ -699,14 +730,35 @@ namespace PSModule
 
         private string GetExtraAppsJson4JobUpdate()
         {
-            List<string> list = new();
-            _mobileConfig.ExtraApps.ForEach(a => list.Add(a.Json4JobUpdate));
+            List<string> list = [];
+            _deviceConfig.ExtraApps.ForEach(a => list.Add(a.Json4JobUpdate));
             return $"[{string.Join(C.COMMA, list)}]";
         }
         private string GetHeaderJson()
         {
-            Header hdr = new() { DeviceMetrics = _mobileConfig.DeviceMetrics, AppAction = _mobileConfig.AppAction };
+            Header hdr = new() { DeviceMetrics = _deviceConfig.DeviceMetrics, AppAction = _deviceConfig.AppAction };
             return hdr.ToJson(indented: false);
+        }
+
+        private async Task<CloudBrowsers> GetCloudBrowsers()
+        {
+            var res = await _client.HttpGet<CloudBrowsers>(C.BROWSERS_ENDPOINT, query: C.TOOL_VERSION, resType: ResType.Object);
+            if (res.IsOK)
+            {
+                var data = res.Entity;
+                if (data?.Browsers?.Length > 0)
+                {
+                    return data;
+                }
+                else
+                {
+                    ThrowTerminatingError(C.NO_BROWSER_FOUND, nameof(ValidateCloudBrowser), ErrorCategory.InvalidData, nameof(ValidateCloudBrowser));
+                }
+            }
+            else
+                ThrowTerminatingError(res.Error, nameof(ValidateCloudBrowser), ErrorCategory.DeviceError, nameof(ValidateCloudBrowser));
+
+            return null;
         }
     }
 }

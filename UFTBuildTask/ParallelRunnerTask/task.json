@@ -10,9 +10,9 @@
   ],
   "author": "OpenText",
   "version": {
-    "Major": 5,
+    "Major": 6,
     "Minor": 0,
-    "Patch": 1
+    "Patch": 0
   },
   "helpUrl": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-local.htm",
   "demands": "UFT_LAUNCHER",
@@ -166,19 +166,6 @@
       "required": false,
       "visibleRule": "envType = mobile && mcAuthType = basic",
       "helpMarkDown": "The password for the user that will access this Digital Lab server during the build step run"
-    },
-    {
-      "name": "mcTenantId",
-      "type": "int",
-      "label": "Tenant Id",
-      "defaultValue": "",
-      "required": false,
-      "visibleRule": "envType = mobile && mcAuthType = basic",
-      "validation": {
-        "expression": "or(eq(value, ''), and(isMatch(value, '^\\d*$', 'IgnoreCase'), isInRange(value, 1, 2147483647)))",
-        "message": "This field must be a valid and positive number (maximum 2147483647)"
-      },
-      "helpMarkDown": "The tenant ID used to connect to the Digital Lab server with multi-tenant mode enabled"
     },
     {
       "name": "mcAccessKey",

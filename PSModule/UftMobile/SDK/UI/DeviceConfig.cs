@@ -10,26 +10,25 @@
  */
 
 using PSModule.UftMobile.SDK.Entity;
-using System;
+using PSModule.UftMobile.SDK.Enums;
 using System.Collections.Generic;
 
 namespace PSModule.UftMobile.SDK.UI
 {
-    public class ParallelRunnerConfig : IConfig
+    public class DeviceConfig(Device device = null, AppConfig appConfig = null, string workDir = "") : IConfig
     {
-        private readonly EnvType _envType;
-        private readonly List<Device> _devices;
-        private readonly List<string> _browsers;
+        public Device Device => device;
+        public AppType AppType => appConfig.AppType;
+        public SysApp SysApp => appConfig.SysApp;
+        public AppLine AppLine => appConfig.AppLine;
+        public List<AppLine> ExtraAppLines => appConfig.ExtraAppsLines;
+        public AppAction AppAction => appConfig.AppAction;
+        public DeviceMetrics DeviceMetrics => appConfig.DeviceMetrics;
 
-        public EnvType EnvType => _envType;
-        public List<Device> Devices => _devices;
-        public List<string> Browsers => _browsers;
+        public string WorkDir => workDir;
+        public string MobileInfo { get; set; }
 
-        public ParallelRunnerConfig(string envType, List<Device> devices, List<string> browsers)
-        {
-            Enum.TryParse(envType, true, out _envType);
-            _devices = devices ?? new();
-            _browsers = browsers ?? new();
-        }
+        public App App { get; set; }
+        public List<App> ExtraApps { get; } = [];
     }
 }

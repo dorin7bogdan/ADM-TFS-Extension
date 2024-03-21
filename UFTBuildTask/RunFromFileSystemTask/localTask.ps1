@@ -27,9 +27,7 @@ $mcServerUrl = Get-VstsInput -Name 'mcServerUrl'
 
 $uftworkdir = $env:UFT_LAUNCHER
 Import-Module $uftworkdir\bin\PSModule.dll
-[bool]$useParallelRunner = $false
-$parallelRunnerConfig = $null
-$mobileConfig = $null
+$configs = [List[IConfig]]::new()
 
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
@@ -44,84 +42,19 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 }
 
 if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
-	[Device]$device = $null
-	[AppLine]$app = $null
-	[List[AppLine]]$apps = $null
-	[List[string]]$invalidAppLines = $null
-	[DeviceMetrics]$metrics = $null
-	[bool]$mcInstall = $false
-	[bool]$mcUninstall = $false
-	[bool]$mcRestart = Get-VstsInput -Name 'mcRestart' -AsBool
-
 	$mcAuthType = Get-VstsInput -Name 'mcAuthType' -Require
 	$mcUsername = Get-VstsInput -Name 'mcUsername'
 	$mcPassword = Get-VstsInput -Name 'mcPassword'
-	[int]$mcTenantId = Get-VstsInput -Name 'mcTenantId' -AsInt
 	$mcAccessKey = Get-VstsInput -Name 'mcAccessKey'
-	$mcDevice = Get-VstsInput -Name 'mcDevice'
 	[bool]$useMcProxy = Get-VstsInput -Name 'useMcProxy' -AsBool
-
-	$mcAppType = Get-VstsInput -Name 'mcAppType'
-	$mcSysApp = $null
-	$mcApp = Get-VstsInput -Name 'mcApp'
-	$mcExtraApps = Get-VstsInput -Name 'mcExtraApps'
-
+	[ProxyConfig]$proxyConfig = $null
 	[bool]$isBasicAuth = ($mcAuthType -eq "basic")
+
 	if ($isBasicAuth -and [string]::IsNullOrWhiteSpace($mcUsername)) {
 		throw "Digital Lab Username is empty."
 	} elseif (!$isBasicAuth -and [string]::IsNullOrWhiteSpace($mcAccessKey)) {
 		throw "Digital Lab AccessKey is empty."
-	} elseif ([string]::IsNullOrWhiteSpace($mcDevice)) {
-		throw "The Device field is required."
-	} elseif ($false -eq [Device]::TryParse($mcDevice, [ref]$device)) {
-		throw "Invalid device -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: DeviceID, Manufacturer, Model, OSType and OSVersion.";
-	} elseif ($mcAppType -eq "custom") {
-		[bool]$isOK = [AppLine]::TryParse($mcApp, [ref]$app)
-		if (!$isOK) {
-			throw "The Main Digital Lab Application is invalid. The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional)."
-		}
-	} elseif ($mcAppType -eq "system") {
-		$mcSysApp = Get-VstsInput -Name 'mcSysApp'
-	}
-	[AppLine]::TryParse($mcExtraApps, [ref]$apps, [ref]$invalidAppLines)
-	if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
-		foreach ($line in $invalidAppLines) {
-			Write-Warning "Invalid app line -> $($line). The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional).";
-		}
-	}
-	if ($app -or ($apps -and $apps.Count -gt 0))
-	{
-		$mcInstall = Get-VstsInput -Name 'mcInstall' -AsBool
-		$mcUninstall = Get-VstsInput -Name 'mcUninstall' -AsBool
-	}
-
-	[bool]$mcLogDeviceMetrics = Get-VstsInput -Name 'mcLogDeviceMetrics' -AsBool
-	if ($mcLogDeviceMetrics) {
-		[bool]$mcCPU = Get-VstsInput -Name 'mcCPU' -AsBool
-		[bool]$mcMemory = Get-VstsInput -Name 'mcMemory' -AsBool
-		[bool]$mcFreeMemory = Get-VstsInput -Name 'mcFreeMemory' -AsBool
-		[bool]$mcLogs = Get-VstsInput -Name 'mcLogs' -AsBool
-		[bool]$mcWifiState = Get-VstsInput -Name 'mcWifiState' -AsBool
-		[bool]$mcThermalState = Get-VstsInput -Name 'mcThermalState' -AsBool
-		[bool]$mcFreeDiskSpace = Get-VstsInput -Name 'mcFreeDiskSpace' -AsBool
-		$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeMemory, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
-	}
-
-	$appAction = [AppAction]::new($mcInstall, $mcUninstall, $mcRestart)
-	$appConfig = [AppConfig]::new($mcAppType, $mcSysApp, $app, $apps, $metrics, $appAction)
-
-	if ($isBasicAuth) {
-		$mobileSrvConfig = [ServerConfig]::new($mcServerUrl, $mcUsername, $mcPassword, $mcTenantId)
-	} else {
-		$mcClientId = $mcSecret = $null
-		$err = [ServerConfig]::ParseAccessKey($mcAccessKey, [ref]$mcClientId, [ref]$mcSecret, [ref]$mcTenantId)
-		if ($err) {
-			throw $err
-		}
-		$mobileSrvConfig = [ServerConfig]::new($mcServerUrl, $mcClientId, $mcSecret, $mcTenantId, $false)
-	}
-
-	$proxyConfig = $null
+	} 
 	if ($useMcProxy) {
 		$mcProxyUrl = Get-VstsInput -Name 'mcProxyUrl'
 		[bool]$useMcProxyCredentials = Get-VstsInput -Name 'useMcProxyCredentials' -AsBool
@@ -136,8 +69,97 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 		$proxySrvConfig = [ServerConfig]::new($mcProxyUrl, $mcProxyUsername, $mcProxyPassword)
 		$proxyConfig = [ProxyConfig]::new($proxySrvConfig, $useMcProxyCredentials)
 	}
-	
-	$mobileConfig = [MobileConfig]::new($mobileSrvConfig, $useMcProxy, $proxyConfig, $device, $appConfig, $workDir)
+	if ($isBasicAuth) {
+		$srvConfig = [ServerConfig]::new($mcServerUrl, $mcUsername, $mcPassword)
+	} else {
+		$mcClientId = $mcSecret = $mcTenantId = $null
+		$err = [ServerConfig]::ParseAccessKey($mcAccessKey, [ref]$mcClientId, [ref]$mcSecret, [ref]$mcTenantId)
+		if ($err) {
+			throw $err
+		}
+		$srvConfig = [ServerConfig]::new($mcServerUrl, $mcClientId, $mcSecret, $mcTenantId, $false)
+	}
+	$dlServerConfig = [ServerConfigEx]::new($srvConfig, $useMcProxy, $proxyConfig)
+	$configs.Add($dlServerConfig)
+
+	[bool]$useMcDevice = Get-VstsInput -Name 'useMcDevice' -AsBool
+	[bool]$useCloudBrowser = Get-VstsInput -Name 'useCloudBrowser' -AsBool
+
+	if ($useMcDevice) {
+		[Device]$device = $null
+		[AppLine]$app = $null
+		[List[AppLine]]$apps = $null
+		[List[string]]$invalidAppLines = $null
+		[DeviceMetrics]$metrics = $null
+		[bool]$mcInstall = $false
+		[bool]$mcUninstall = $false
+		[bool]$mcRestart = Get-VstsInput -Name 'mcRestart' -AsBool
+
+		$mcDevice = (Get-VstsInput -Name 'mcDevice').Trim()
+		$mcAppType = Get-VstsInput -Name 'mcAppType'
+		$mcSysApp = $null
+		$mcApp = (Get-VstsInput -Name 'mcApp').Trim()
+		$mcExtraApps = (Get-VstsInput -Name 'mcExtraApps').Trim()
+
+		if ($mcDevice -eq "") {
+			throw "The Device field is required."
+		} elseif ($false -eq [Device]::TryParse($mcDevice, [ref]$device)) {
+			throw "Invalid device -> $($line). The expected pattern is property1:""value1"", property2:""value2""... Valid property names are: DeviceID, Manufacturer, Model, OSType and OSVersion.";
+		} elseif ($mcAppType -eq "custom") {
+			[bool]$isOK = [AppLine]::TryParse($mcApp, [ref]$app)
+			if (!$isOK) {
+				throw "The Main Digital Lab Application is invalid. The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional)."
+			}
+		} elseif ($mcAppType -eq "system") {
+			$mcSysApp = Get-VstsInput -Name 'mcSysApp'
+		}
+		[AppLine]::TryParse($mcExtraApps, [ref]$apps, [ref]$invalidAppLines)
+		if ($invalidAppLines -and $invalidAppLines.Count -gt 0) {
+			foreach ($line in $invalidAppLines) {
+				Write-Warning "Invalid app line -> $($line). The expected pattern is Identifier:""value"", Packaged:""Yes/No"" (Identifier is required, Packaged is optional).";
+			}
+		}
+		if ($app -or ($apps -and $apps.Count -gt 0))
+		{
+			$mcInstall = Get-VstsInput -Name 'mcInstall' -AsBool
+			$mcUninstall = Get-VstsInput -Name 'mcUninstall' -AsBool
+		}
+
+		[bool]$mcLogDeviceMetrics = Get-VstsInput -Name 'mcLogDeviceMetrics' -AsBool
+		if ($mcLogDeviceMetrics) {
+			[bool]$mcCPU = Get-VstsInput -Name 'mcCPU' -AsBool
+			[bool]$mcMemory = Get-VstsInput -Name 'mcMemory' -AsBool
+			[bool]$mcFreeMemory = Get-VstsInput -Name 'mcFreeMemory' -AsBool
+			[bool]$mcLogs = Get-VstsInput -Name 'mcLogs' -AsBool
+			[bool]$mcWifiState = Get-VstsInput -Name 'mcWifiState' -AsBool
+			[bool]$mcThermalState = Get-VstsInput -Name 'mcThermalState' -AsBool
+			[bool]$mcFreeDiskSpace = Get-VstsInput -Name 'mcFreeDiskSpace' -AsBool
+			$metrics = [DeviceMetrics]::new($mcCPU, $mcMemory, $mcFreeMemory, $mcLogs, $mcWifiState, $mcThermalState, $mcFreeDiskSpace)
+		}
+
+		$appAction = [AppAction]::new($mcInstall, $mcUninstall, $mcRestart)
+		$appConfig = [AppConfig]::new($mcAppType, $mcSysApp, $app, $apps, $metrics, $appAction)
+		$deviceConfig = [DeviceConfig]::new($device, $appConfig, $workDir)
+		$configs.Add($deviceConfig)
+	}
+	if ($useCloudBrowser) {
+		$url = (Get-VstsInput -Name 'cbStartUrl').Trim(' "')
+		$region = (Get-VstsInput -Name 'cbLocation').Trim(' "')
+		$os = (Get-VstsInput -Name 'cbOS').Trim(' "')
+		$browser = (Get-VstsInput -Name 'cbName').Trim(' "')
+		$version = (Get-VstsInput -Name 'cbVersion').Trim(' "')
+		if ($region -eq "") {
+			throw "The Cloud Browser Location field is required."
+		} elseif ($os -eq "") {
+			throw "The Cloud Browser OS field is required."
+		} elseif ($browser -eq "") {
+			throw "The Cloud Browser field is required."
+		} elseif ($version -eq "") {
+			throw "The Cloud Browser Version field is required."
+		}
+		$cbConfig = [CloudBrowserConfig]::new($url, $region, $os, $browser, $version)
+		$configs.Add($cbConfig)
+	} 
 }
 
 $resDir = Join-Path $uftworkdir -ChildPath "res\Report_$buildNumber"
@@ -293,7 +315,7 @@ try {
 #---------------------------------------------------------------------------------------------------
 #Run the tests
 try {
-	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $useParallelRunner $parallelRunnerConfig $rptFolders $mobileConfig $cancelRunOnFailure $tsPattern -Verbose 
+	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $false $configs $rptFolders $cancelRunOnFailure $tsPattern -Verbose 
 } catch {
 	Write-Error $_
 } finally {

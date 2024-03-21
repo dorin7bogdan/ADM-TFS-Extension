@@ -10,9 +10,9 @@
   ],
   "author": "OpenText",
   "version": {
-    "Major": 5,
+    "Major": 6,
     "Minor": 0,
-    "Patch": 1
+    "Patch": 0
   },
   "helpUrl": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-local.htm",
   "demands": "UFT_LAUNCHER",
@@ -21,6 +21,18 @@
       "name": "digitalLab",
       "displayName": "Digital Lab",
       "isExpanded": false
+    },
+    {
+      "name": "deviceLab",
+      "displayName": "Device Lab",
+      "isExpanded": true,
+      "visibleRule":  "useMcDevice = true"
+    },
+    {
+      "name": "browserLab",
+      "displayName": "Cloud Browser Lab",
+      "isExpanded": true,
+      "visibleRule": "useCloudBrowser = true"
     }
   ],
   "inputs": [
@@ -141,20 +153,6 @@
       "helpMarkDown": "The password for the user that will access this Digital Lab server during the build step run"
     },
     {
-      "name": "mcTenantId",
-      "groupName": "digitalLab",
-      "type": "int",
-      "label": "Tenant Id",
-      "defaultValue": "",
-      "required": false,
-      "visibleRule": "mcAuthType = basic",
-      "validation": {
-        "expression": "or(eq(value, ''), and(isMatch(value, '^\\d*$', 'IgnoreCase'), isInRange(value, 1, 2147483647)))",
-        "message": "This field must be a valid and positive number (maximum 2147483647)"
-      },
-      "helpMarkDown": "The tenant ID used to connect to the Digital Lab server with multi-tenant mode enabled"
-    },
-    {
       "name": "mcAccessKey",
       "groupName": "digitalLab",
       "type": "string",
@@ -214,17 +212,35 @@
       "helpMarkDown": "The password for the user that will access this proxy server during the build step run"
     },
     {
-      "name": "mcDevice",
+      "name": "useMcDevice",
       "groupName": "digitalLab",
+      "type": "boolean",
+      "label": "Use Device Lab",
+      "defaultValue": false,
+      "required": false,
+      "helpMarkDown": "Choose whether to use a mobile device (applicable for mobile tests only)"
+    },
+    {
+      "name": "useCloudBrowser",
+      "groupName": "digitalLab",
+      "type": "boolean",
+      "label": "Use Cloud Browser Lab",
+      "defaultValue": false,
+      "required": false,
+      "helpMarkDown": "Choose whether to use a cloud browser"
+    },
+    {
+      "name": "mcDevice",
+      "groupName": "deviceLab",
       "type": "string",
       "label": "Device",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "helpMarkDown": "Specify one single device's information"
     },
     {
       "name": "mcAppType",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "pickList",
       "label": "Launch on start",
       "defaultValue": "home",
@@ -238,7 +254,7 @@
     },
     {
       "name": "mcSysApp",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "pickList",
       "label": "System Application",
       "defaultValue": "browser",
@@ -257,7 +273,7 @@
     },
     {
       "name": "mcApp",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "string",
       "label": "Main Digital Lab Application",
       "defaultValue": "Identifier: \"com.google.android.apps.maps\", Packaged: \"Yes\"",
@@ -271,7 +287,7 @@
     },
     {
       "name": "mcExtraApps",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "multiLine",
       "label": "Additional Digital Lab Applications",
       "defaultValue": "Identifier: \"app2\", Packaged: \"Yes\"\nIdentifier: \"app3\", Packaged: \"No\"",
@@ -281,78 +297,123 @@
     },
     {
       "name": "mcInstall",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Install"
     },
     {
       "name": "mcRestart",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Restart"
     },
     {
       "name": "mcUninstall",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Uninstall"
     },
     {
       "name": "mcLogDeviceMetrics",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "defaultValue": false,
       "type": "boolean",
       "label": "Log device metrics",
-      "visibleRule": "mcTenantId = 2147483648"
+      "visibleRule": "mcSysApp = to_be_implemented"
     },
     {
       "name": "mcCPU",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "CPU",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcMemory",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Memory",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcFreeMemory",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Free Memory",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcLogs",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Logs",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcWifiState",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Wifi State",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcThermalState",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Thermal State",
       "visibleRule": "mcLogDeviceMetrics = true"
     },
     {
       "name": "mcFreeDiskSpace",
-      "groupName": "digitalLab",
+      "groupName": "deviceLab",
       "type": "boolean",
       "label": "Free Disk Space",
       "visibleRule": "mcLogDeviceMetrics = true"
+    },
+    {
+      "name": "cbStartUrl",
+      "groupName": "browserLab",
+      "type": "string",
+      "label": "URL",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Specify the URL link of the starting webpage"
+    },
+    {
+      "name": "cbLocation",
+      "groupName": "browserLab",
+      "type": "string",
+      "label": "Location",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Specify the location name (use the task 'Get Digital Lab Resources' to get the available browser locations)"
+    },
+    {
+      "name": "cbOS",
+      "groupName": "browserLab",
+      "type": "string",
+      "label": "Operating System",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Specify the OS name (use the task 'Get Digital Lab Resources' to get the available browser Operating Systems)"
+    },
+    {
+      "name": "cbName",
+      "groupName": "browserLab",
+      "type": "string",
+      "label": "Browser",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Specify the name of one browser only (use the task 'Get Digital Lab Resources' to get the available browsers)"
+    },
+    {
+      "name": "cbVersion",
+      "groupName": "browserLab",
+      "type": "string",
+      "label": "Version",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Specify the browser version / tag (use the task 'Get Digital Lab Resources' to get the available browsers)"
     }
   ],
 

@@ -9,18 +9,14 @@
  * The information contained herein is subject to change without notice.
  */
 
-
-using Newtonsoft.Json;
-
-namespace PSModule.UftMobile.SDK.Entity
+namespace PSModule.UftMobile.SDK.UI
 {
-    public class Project
+    public class CloudBrowserConfig(string url, string region, string os, string browser, string version) : IConfig
     {
-        [JsonProperty("tenantId")]
-        public int Id { get; set; }
-        [JsonProperty("tenantName")]
-        public string Name { get; set; }
-        [JsonProperty("isActive")]
-        public bool IsActive { get; set; }
+        public string Url => url;
+        public string Region => region;
+        public string OS => os;
+        public string Browser => browser;
+        public string Version => version;
     }
 }
