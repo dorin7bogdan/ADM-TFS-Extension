@@ -9,6 +9,7 @@
 # The information contained herein is subject to change without notice.
 # 
 
+using namespace PSModule.Common;
 using namespace PSModule.UftMobile.SDK.UI
 using namespace PSModule.UftMobile.SDK.Entity
 using namespace System.Collections.Generic
@@ -37,6 +38,7 @@ $envType = Get-VstsInput -Name 'envType'
 $uftworkdir = $env:UFT_LAUNCHER
 Import-Module $uftworkdir\bin\PSModule.dll
 $configs = [List[IConfig]]::new()
+$configs.Add([EnvVarsConfig]::new($env:STORAGE_ACCOUNT, $env:CONTAINER))
 
 [List[Device]]$devices = $null
 if ($envType -eq "") {
@@ -45,9 +47,9 @@ if ($envType -eq "") {
 	$mcServerUrl = (Get-VstsInput -Name 'mcServerUrl').Trim()
 	$mcDevices = (Get-VstsInput -Name 'mcDevices').Trim()
 	$mcAuthType = Get-VstsInput -Name 'mcAuthType'
-	$mcUsername = Get-VstsInput -Name 'mcUsername'
+	$mcUsername = (Get-VstsInput -Name 'mcUsername').Trim()
 	$mcPassword = Get-VstsInput -Name 'mcPassword'
-	$mcAccessKey = Get-VstsInput -Name 'mcAccessKey'
+	$mcAccessKey = (Get-VstsInput -Name 'mcAccessKey').Trim(' "')
 
 	[bool]$isBasicAuth = ($mcAuthType -eq "basic")
 
@@ -55,9 +57,11 @@ if ($envType -eq "") {
 		throw "The Devices field is required."
 	} elseif ($mcServerUrl -eq "") {
 		throw "Digital Lab Server is empty."
-	} elseif ($isBasicAuth -and [string]::IsNullOrWhiteSpace($mcUsername)) {
+	} elseif ($isBasicAuth -and ($mcUsername -eq "")) {
 		throw "Digital Lab Username is empty."
-	} elseif (!$isBasicAuth -and [string]::IsNullOrWhiteSpace($mcAccessKey)) {
+	} elseif ($isBasicAuth -and ($mcPassword.Trim() -eq "")) {
+		throw "Digital Lab Password is empty."
+	} elseif (!$isBasicAuth -and ($mcAccessKey -eq "")) {
 		throw "Digital Lab AccessKey is empty."
 	}
 
@@ -84,6 +88,8 @@ if ($envType -eq "") {
 			throw "Proxy Server is empty."
 		} elseif ($useMcProxyCredentials -and ($mcProxyUsername -eq "")) {
 			throw "Proxy Username is empty."
+		} elseif ($useMcProxyCredentials -and ($mcProxyPassword.Trim() -eq "")) {
+			throw "Proxy Password is empty."
 		}
 		$proxySrvConfig = [ServerConfig]::new($mcProxyUrl, $mcProxyUsername, $mcProxyPassword)
 		$proxyConfig = [ProxyConfig]::new($proxySrvConfig, $useMcProxyCredentials)
@@ -301,7 +307,7 @@ try {
 #---------------------------------------------------------------------------------------------------
 #Run the tests
 try {
-	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $true $configs $rptFolders $false $tsPattern -Verbose 
+	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $true $configs $rptFolders $false $tsPattern -Verbose 
 } catch {
 	Write-Error $_
 } finally {

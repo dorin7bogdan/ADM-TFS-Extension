@@ -9,25 +9,26 @@
 # The information contained herein is subject to change without notice.
 # 
 
+using namespace PSModule.Common;
 using namespace PSModule.UftMobile.SDK.UI
 using namespace PSModule.UftMobile.SDK.Entity
 using namespace System.Collections.Generic
 
 param()
-$testPathInput = Get-VstsInput -Name 'testPathInput' -Require
-$timeOutIn = Get-VstsInput -Name 'timeOutIn'
+$testPathInput = (Get-VstsInput -Name 'testPathInput' -Require).Trim()
+$timeOutIn = (Get-VstsInput -Name 'timeOutIn').Trim()
 $uploadArtifact = Get-VstsInput -Name 'uploadArtifact' -Require
 $artifactType = Get-VstsInput -Name 'artifactType'
-$rptFileName = Get-VstsInput -Name 'reportFileName'
+$rptFileName = (Get-VstsInput -Name 'reportFileName').Trim()
 [string]$tsPattern = Get-VstsInput -Name 'tsPattern'
 [bool]$cancelRunOnFailure = Get-VstsInput -Name 'cancelRunOnFailure' -AsBool
 [bool]$enableFailedTestsRpt = Get-VstsInput -Name 'enableFailedTestsReport' -AsBool
-
-$mcServerUrl = Get-VstsInput -Name 'mcServerUrl'
+[bool]$useDigitalLab = Get-VstsInput -Name 'useDigitalLab' -AsBool
 
 $uftworkdir = $env:UFT_LAUNCHER
 Import-Module $uftworkdir\bin\PSModule.dll
 $configs = [List[IConfig]]::new()
+$configs.Add([EnvVarsConfig]::new($env:STORAGE_ACCOUNT, $env:CONTAINER, $env:LEAVE_UFT_OPEN_IF_VISIBLE))
 
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
@@ -41,30 +42,38 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 	$rerunType = "attempt"
 }
 
-if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
+if ($useDigitalLab) {
+	$mcServerUrl = (Get-VstsInput -Name 'mcServerUrl').Trim()
+	if ($mcServerUrl -eq "") {
+		throw "The Digital Lab Server URL is missing."
+	}
 	$mcAuthType = Get-VstsInput -Name 'mcAuthType' -Require
-	$mcUsername = Get-VstsInput -Name 'mcUsername'
+	$mcUsername = (Get-VstsInput -Name 'mcUsername').Trim()
 	$mcPassword = Get-VstsInput -Name 'mcPassword'
-	$mcAccessKey = Get-VstsInput -Name 'mcAccessKey'
+	$mcAccessKey = (Get-VstsInput -Name 'mcAccessKey').Trim(' "')
 	[bool]$useMcProxy = Get-VstsInput -Name 'useMcProxy' -AsBool
 	[ProxyConfig]$proxyConfig = $null
 	[bool]$isBasicAuth = ($mcAuthType -eq "basic")
 
-	if ($isBasicAuth -and [string]::IsNullOrWhiteSpace($mcUsername)) {
+	if ($isBasicAuth -and ($mcUsername -eq "")) {
 		throw "Digital Lab Username is empty."
-	} elseif (!$isBasicAuth -and [string]::IsNullOrWhiteSpace($mcAccessKey)) {
+	} elseif ($isBasicAuth -and ($mcPassword.Trim() -eq "")) {
+		throw "Digital Lab Password is empty."
+	} elseif (!$isBasicAuth -and ($mcAccessKey -eq "")) {
 		throw "Digital Lab AccessKey is empty."
 	} 
 	if ($useMcProxy) {
-		$mcProxyUrl = Get-VstsInput -Name 'mcProxyUrl'
+		$mcProxyUrl = (Get-VstsInput -Name 'mcProxyUrl').Trim()
 		[bool]$useMcProxyCredentials = Get-VstsInput -Name 'useMcProxyCredentials' -AsBool
-		$mcProxyUsername = Get-VstsInput -Name 'mcProxyUsername'
+		$mcProxyUsername = (Get-VstsInput -Name 'mcProxyUsername').Trim()
 		$mcProxyPassword = Get-VstsInput -Name 'mcProxyPassword'
 
-		if ([string]::IsNullOrWhiteSpace($mcProxyUrl)) {
+		if ($mcProxyUrl -eq "") {
 			throw "Proxy Server is empty."
-		} elseif ($useMcProxyCredentials -and [string]::IsNullOrWhiteSpace($mcProxyUsername)) {
+		} elseif ($useMcProxyCredentials -and ($mcProxyUsername -eq "")) {
 			throw "Proxy Username is empty."
+		} elseif ($useMcProxyCredentials -and ($mcProxyPassword.Trim() -eq "")) {
+			throw "Proxy Password is empty."
 		}
 		$proxySrvConfig = [ServerConfig]::new($mcProxyUrl, $mcProxyUsername, $mcProxyPassword)
 		$proxyConfig = [ProxyConfig]::new($proxySrvConfig, $useMcProxyCredentials)
@@ -84,6 +93,10 @@ if (![string]::IsNullOrWhiteSpace($mcServerUrl)) {
 
 	[bool]$useMcDevice = Get-VstsInput -Name 'useMcDevice' -AsBool
 	[bool]$useCloudBrowser = Get-VstsInput -Name 'useCloudBrowser' -AsBool
+
+	if (!$useMcDevice -and !$useCloudBrowser) {
+		throw 'Please select at least one of the options: "Use Device Lab" or "Use Cloud Browser Lab".'
+	}
 
 	if ($useMcDevice) {
 		[Device]$device = $null
@@ -315,7 +328,7 @@ try {
 #---------------------------------------------------------------------------------------------------
 #Run the tests
 try {
-	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $env:STORAGE_ACCOUNT $env:CONTAINER $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $false $configs $rptFolders $cancelRunOnFailure $tsPattern -Verbose 
+	Invoke-FSTask $testPathInput $timeOutIn $uploadArtifact $artifactType $rptFileName $archiveNamePattern $buildNumber $enableFailedTestsRpt $false $configs $rptFolders $cancelRunOnFailure $tsPattern -Verbose 
 } catch {
 	Write-Error $_
 } finally {

@@ -20,19 +20,20 @@
     {
       "name": "digitalLab",
       "displayName": "Digital Lab",
-      "isExpanded": false
+      "isExpanded": false,
+      "visibleRule": "useDigitalLab == true"
     },
     {
       "name": "deviceLab",
       "displayName": "Device Lab",
       "isExpanded": true,
-      "visibleRule":  "useMcDevice = true"
+      "visibleRule": "useDigitalLab == true && useMcDevice == true"
     },
     {
       "name": "browserLab",
       "displayName": "Cloud Browser Lab",
       "isExpanded": true,
-      "visibleRule": "useCloudBrowser = true"
+      "visibleRule": "useDigitalLab == true && useCloudBrowser == true"
     }
   ],
   "inputs": [
@@ -59,6 +60,14 @@
       "defaultValue": "",
       "required": false,
       "helpMarkDown": "Timeout value in seconds. If left empty, there is no timeout"
+    },
+    {
+      "name": "useDigitalLab",
+      "type": "boolean",
+      "label": "Use Digital Lab",
+      "defaultValue": false,
+      "required": false,
+      "helpMarkDown": "Choose whether to display the Digitial Lab fields. Required for Mobile or Cloud Browser tests."
     },
     {
       "name": "cancelRunOnFailure",
@@ -116,7 +125,7 @@
       "type": "string",
       "label": "Server",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "helpMarkDown": "The address of your Digital Lab server, in the format http[s]://(server name):(port)"
     },
     {
@@ -138,7 +147,7 @@
       "type": "string",
       "label": "Username",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "visibleRule": "mcAuthType = basic",
       "helpMarkDown": "The username that will access this Digital Lab server during the build step run"
     },
@@ -148,7 +157,7 @@
       "type": "string",
       "label": "Password",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "visibleRule": "mcAuthType = basic",
       "helpMarkDown": "The password for the user that will access this Digital Lab server during the build step run"
     },
@@ -158,7 +167,7 @@
       "type": "string",
       "label": "Access Key",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "visibleRule": "mcAuthType = key",
       "helpMarkDown": "The Access Key will provide access to this Digital Lab server during the build step run"
     },
@@ -207,7 +216,7 @@
       "type": "string",
       "label": "Proxy Password",
       "defaultValue": "",
-      "required": false,
+      "required": true,
       "visibleRule": "useMcProxy = true && useMcProxyCredentials = true",
       "helpMarkDown": "The password for the user that will access this proxy server during the build step run"
     },
