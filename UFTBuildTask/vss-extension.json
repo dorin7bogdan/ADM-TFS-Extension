@@ -36,7 +36,7 @@
 	],
 	"links": {
 		"home": {
-			"uri": "https://github.com/MicroFocus/ADM-TFS-Extension/releases/tag/23.4.0"
+			"uri": "https://github.com/MicroFocus/ADM-TFS-Extension/releases/tag/24.2.0"
 		},
 		"installation": {
 			"uri": "https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops.htm"

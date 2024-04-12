@@ -4,6 +4,17 @@ This extension enables you to run UFT One tests as part of your Azure DevOps bui
 • When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
 After the build is complete, you can view comprehensive test results. 
 
+# What's new in UFT One Azure DevOps extension - version 24.2
+##### Release date: April 2024
+- Update ADO extension to use FTToolsLauncher instead of HpToolsLauncher
+- [FS] Support testing on Digital Lab Cloud Browsers
+- [FS] Enable using the open UFT One visible instance
+- [FS] In the UI, highlight the required Digital Lab fields
+- [DL] Add proxy fields to Get Digital Lab Resource Task
+- [FS][Parallel][DL] Remove the unused Tenant ID field / control and validation logic
+- [Parallel] Print all arguments in the console output when calling ParallelRunner.exe
+- Bug-fixing, code enhancements and optimizations, etc...
+
 # What's new in UFT One Azure DevOps extension - version 23.4
 ##### Release date: October 2023
 This version includes the following minor changes:
