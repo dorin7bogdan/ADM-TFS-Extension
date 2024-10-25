@@ -54,7 +54,6 @@ namespace PSModule
         #endregion
 
         private readonly StringBuilder _launcherConsole = new();
-        private readonly ConcurrentQueue<string> _outputToProcess = new();
         private readonly ConcurrentQueue<string> _errorToProcess = new();
 
         protected bool _enableFailedTestsReport;
@@ -274,36 +273,36 @@ namespace PSModule
                 };
 
                 using Process launcher = new() { StartInfo = info };
+                using ManualResetEvent exitEvent = new(false);
 
-                launcher.OutputDataReceived += Proc_OutDataReceived;
-                launcher.ErrorDataReceived += Proc_ErrDataReceived;
+                launcher.OutputDataReceived += (sender, e) =>
+                {
+                    if (!e.Data.IsNullOrWhiteSpace())
+                    {
+                        _launcherConsole.Append(e.Data);
+                        Console.WriteLine(e.Data);
+                        //WriteObject(e.Data);
+                    }
+                };
+                launcher.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!e.Data.IsNullOrWhiteSpace())
+                    {
+                        Console.WriteLine($"Error: {e.Data}");
+                        _errorToProcess.Enqueue(e.Data);
+                    }
+                };
 
+                launcher.Exited += (sender, e) => exitEvent.Set();
+                // Start process and begin reading output asynchronously
+                launcher.EnableRaisingEvents = true;
                 launcher.Start();
 
                 launcher.BeginOutputReadLine();
                 launcher.BeginErrorReadLine();
 
-                void processOutput()
-                {
-                    while (_outputToProcess.TryDequeue(out string line))
-                    {
-                        _launcherConsole.Append(line);
-                        WriteObject(line);
-                    }
-                }
-
-                while (!launcher.HasExited)
-                {
-                    processOutput();
-                    Thread.Sleep(200);
-                }
-                processOutput();
-
-                launcher.OutputDataReceived -= Proc_OutDataReceived;
-                launcher.ErrorDataReceived -= Proc_ErrDataReceived;
-
-                launcher.WaitForExit();
-                
+                // Wait for the process to exit without polling
+                exitEvent.WaitOne();
                 return (LauncherExitCode?)launcher.ExitCode;
             }
             catch (ThreadInterruptedException)
@@ -343,34 +342,19 @@ namespace PSModule
                 }
 
                 using Process converter = new() { StartInfo = info };
+                using ManualResetEvent exitEvent = new(false);
 
-                converter.OutputDataReceived += Proc_OutDataReceived;
-                converter.ErrorDataReceived += Conv_ErrDataReceived;
-
+                converter.OutputDataReceived += (sender, e) => { if (!string.IsNullOrEmpty(e.Data)) { Console.WriteLine(e.Data); } };
+                converter.ErrorDataReceived += (sender, e) => { if (!string.IsNullOrEmpty(e.Data)) { Console.WriteLine($"Report Converter error: {e.Data}"); } };
+                converter.Exited += (sender, e) => exitEvent.Set();
+                // Start process and begin reading output asynchronously
+                converter.EnableRaisingEvents = true;
                 converter.Start();
 
                 converter.BeginOutputReadLine();
                 converter.BeginErrorReadLine();
 
-                void processOutput()
-                {
-                    while (_outputToProcess.TryDequeue(out string line))
-                    {
-                        WriteObject(line);
-                    }
-                }
-
-                while (!converter.HasExited)
-                {
-                    processOutput();
-                    Thread.Sleep(200);
-                }
-                processOutput();
-
-                converter.OutputDataReceived -= Proc_OutDataReceived;
-                converter.ErrorDataReceived -= Conv_ErrDataReceived;
-
-                converter.WaitForExit();
+                exitEvent.WaitOne();
             }
             catch (ThreadInterruptedException)
             {
@@ -380,28 +364,6 @@ namespace PSModule
             {
                 LogError(e, ErrorCategory.InvalidData);
             }
-        }
-
-        private void Conv_ErrDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (!e.Data.IsNullOrWhiteSpace())
-            {
-                Console.WriteLine($"Report Converter error: {e.Data}");
-            }
-        }
-
-        private void Proc_ErrDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (!e.Data.IsNullOrWhiteSpace())
-            {
-                Console.WriteLine($"Error: {e.Data}");
-                _errorToProcess.Enqueue(e.Data);
-            }
-        }
-
-        private void Proc_OutDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            _outputToProcess.Enqueue(e.Data);
         }
 
         protected abstract string GetRetCodeFileName();
