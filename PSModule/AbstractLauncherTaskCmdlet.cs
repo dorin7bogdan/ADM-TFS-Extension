@@ -54,8 +54,8 @@ namespace PSModule
         #endregion
 
         private readonly StringBuilder _launcherConsole = new();
-        private readonly ConcurrentQueue<string> outputToProcess = new();
-        private readonly ConcurrentQueue<string> errorToProcess = new();
+        private readonly ConcurrentQueue<string> _outputToProcess = new();
+        private readonly ConcurrentQueue<string> _errorToProcess = new();
 
         protected bool _enableFailedTestsReport;
         protected bool _isParallelRunnerMode;
@@ -130,7 +130,7 @@ namespace PSModule
                 if (!hasResults)
                 {
                     ErrorCategory categ = exitCode == LauncherExitCode.AlmNotConnected ? ErrorCategory.ConnectionError : ErrorCategory.InvalidData;
-                    if (errorToProcess.TryDequeue(out string error))
+                    if (_errorToProcess.TryDequeue(out string error))
                     {
                         ThrowTerminatingError(new ErrorRecord(new Exception(error), nameof(ProcessRecord), categ, nameof(ProcessRecord)));
                     }
@@ -212,7 +212,7 @@ namespace PSModule
                             }
                         }
                     }
-                    if (errorToProcess.TryDequeue(out string error) && !error.StartsWith(C.LAUNCHER_EXITED_WITH_CODE))
+                    if (_errorToProcess.TryDequeue(out string error) && !error.StartsWith(C.LAUNCHER_EXITED_WITH_CODE))
                     {
                         ThrowTerminatingError(new ErrorRecord(new Exception(error), nameof(ProcessRecord), ErrorCategory.InvalidData, nameof(ProcessRecord)));
                     }
@@ -273,7 +273,7 @@ namespace PSModule
                     RedirectStandardError = true
                 };
 
-                Process launcher = new() { StartInfo = info };
+                using Process launcher = new() { StartInfo = info };
 
                 launcher.OutputDataReceived += Proc_OutDataReceived;
                 launcher.ErrorDataReceived += Proc_ErrDataReceived;
@@ -283,14 +283,21 @@ namespace PSModule
                 launcher.BeginOutputReadLine();
                 launcher.BeginErrorReadLine();
 
-                while (!launcher.HasExited)
+                void processOutput()
                 {
-                    if (outputToProcess.TryDequeue(out string line))
+                    while (_outputToProcess.TryDequeue(out string line))
                     {
                         _launcherConsole.Append(line);
                         WriteObject(line);
                     }
                 }
+
+                while (!launcher.HasExited)
+                {
+                    processOutput();
+                    Thread.Sleep(200);
+                }
+                processOutput();
 
                 launcher.OutputDataReceived -= Proc_OutDataReceived;
                 launcher.ErrorDataReceived -= Proc_ErrDataReceived;
@@ -335,7 +342,7 @@ namespace PSModule
                     info.Arguments += $" \"{reportFolder}\"";
                 }
 
-                Process converter = new() { StartInfo = info };
+                using Process converter = new() { StartInfo = info };
 
                 converter.OutputDataReceived += Proc_OutDataReceived;
                 converter.ErrorDataReceived += Conv_ErrDataReceived;
@@ -345,13 +352,20 @@ namespace PSModule
                 converter.BeginOutputReadLine();
                 converter.BeginErrorReadLine();
 
-                while (!converter.HasExited)
+                void processOutput()
                 {
-                    if (outputToProcess.TryDequeue(out string line))
+                    while (_outputToProcess.TryDequeue(out string line))
                     {
                         WriteObject(line);
                     }
                 }
+
+                while (!converter.HasExited)
+                {
+                    processOutput();
+                    Thread.Sleep(200);
+                }
+                processOutput();
 
                 converter.OutputDataReceived -= Proc_OutDataReceived;
                 converter.ErrorDataReceived -= Conv_ErrDataReceived;
@@ -381,13 +395,13 @@ namespace PSModule
             if (!e.Data.IsNullOrWhiteSpace())
             {
                 Console.WriteLine($"Error: {e.Data}");
-                errorToProcess.Enqueue(e.Data);
+                _errorToProcess.Enqueue(e.Data);
             }
         }
 
         private void Proc_OutDataReceived(object sender, DataReceivedEventArgs e)
         {
-            outputToProcess.Enqueue(e.Data);
+            _outputToProcess.Enqueue(e.Data);
         }
 
         protected abstract string GetRetCodeFileName();
