@@ -251,7 +251,8 @@ namespace PSModule
 
         private LauncherExitCode? Run(string launcherPath, string paramFile)
         {
-            Console.WriteLine($"{launcherPath} -paramfile {paramFile}");
+            string args = $" -paramfile \"{paramFile}\"";
+            Console.WriteLine($"{launcherPath}{args}");
             _launcherConsole.Clear();
             try
             {
@@ -266,7 +267,7 @@ namespace PSModule
                 ProcessStartInfo info = new()
                 {
                     UseShellExecute = false,
-                    Arguments = $" -paramfile \"{paramFile}\"",
+                    Arguments = args,
                     FileName = launcherPath,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
@@ -281,7 +282,6 @@ namespace PSModule
                     {
                         _launcherConsole.Append(e.Data);
                         Console.WriteLine(e.Data);
-                        //WriteObject(e.Data);
                     }
                 };
                 launcher.ErrorDataReceived += (sender, e) =>
@@ -328,24 +328,27 @@ namespace PSModule
         {
             try
             {
+                string args = $" -j \"{outputfile}\" --aggregate";
+                foreach (var reportFolder in _rptPaths)
+                {
+                    args += $" \"{reportFolder}\"";
+                }
+                Console.WriteLine($"{converterPath}{args}");
+
                 ProcessStartInfo info = new()
                 {
                     UseShellExecute = false,
-                    Arguments = $" -j \"{outputfile}\" --aggregate",
+                    Arguments = args,
                     FileName = converterPath,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
-                foreach (var reportFolder in _rptPaths)
-                {
-                    info.Arguments += $" \"{reportFolder}\"";
-                }
 
                 using Process converter = new() { StartInfo = info };
                 using ManualResetEvent exitEvent = new(false);
 
-                converter.OutputDataReceived += (sender, e) => { if (!string.IsNullOrEmpty(e.Data)) { Console.WriteLine(e.Data); } };
-                converter.ErrorDataReceived += (sender, e) => { if (!string.IsNullOrEmpty(e.Data)) { Console.WriteLine($"Report Converter error: {e.Data}"); } };
+                converter.OutputDataReceived += (sender, e) => { if (!e.Data.IsNullOrWhiteSpace()) { Console.WriteLine(e.Data); } };
+                converter.ErrorDataReceived += (sender, e) => { if (!e.Data.IsNullOrWhiteSpace()) { Console.WriteLine($"Error: {e.Data}"); } };
                 converter.Exited += (sender, e) => exitEvent.Set();
                 // Start process and begin reading output asynchronously
                 converter.EnableRaisingEvents = true;
