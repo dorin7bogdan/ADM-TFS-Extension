@@ -23,6 +23,7 @@ using PSModule.Models;
 using System.Xml.Linq;
 using System.Runtime.CompilerServices;
 using PSModule.UftMobile.SDK.UI;
+using System.Security;
 
 namespace PSModule
 {
@@ -66,16 +67,17 @@ namespace PSModule
         protected CloudBrowserConfig _cloudBrowserConfig;
         protected ParallelRunnerConfig _parallelRunnerConfig;
         protected string _timestampPattern;
+        protected SecureString _privateKey;
 
         protected AbstractLauncherTaskCmdlet() { }
 
-        public abstract Dictionary<string, string> GetTaskProperties();
+        protected abstract Dictionary<string, string> GetTaskProperties();
 
         private delegate void CreateSummaryReport(string rptPath, RunType runType, IList<ReportMetaData> reportList, string tsPattern, H.OptionalParams optionalParams = null);
 
         protected override void ProcessRecord()
         {
-            string launcherPath, converterPath, paramFileName = string.Empty, resultsFileName;
+            string launcherPath, converterPath, propsFilePath = string.Empty, resultsFilePath;
             try
             {
                 Dictionary<string, string> properties;
@@ -115,19 +117,19 @@ namespace PSModule
 
                 string timeSign = DateTime.Now.ToString(DDMMYYYYHHMMSSSSS);
 
-                paramFileName = Path.Combine(propsDir, $"{PROPS}{timeSign}.txt");
-                resultsFileName = Path.Combine(resdir, $"{RESULTS}{timeSign}.xml");
+                propsFilePath = Path.Combine(propsDir, $"{PROPS}{timeSign}.txt");
+                resultsFilePath = Path.Combine(resdir, $"{RESULTS}{timeSign}.xml");
 
-                properties.Add(RESULTS_FILENAME, resultsFileName.Replace(@"\", @"\\")); // double backslashes are expected by HpToolsLauncher.exe (JavaProperties.cs, in LoadInternal method)
+                properties.Add(RESULTS_FILENAME, resultsFilePath.Replace(C.BACK_SLASH_, C.DOUBLE_BACK_SLASH_)); // double backslashes are expected by HpToolsLauncher.exe (JavaProperties.cs, in LoadInternal method)
 
-                if (!SaveProperties(paramFileName, properties))
+                if (!SaveProperties(propsFilePath, properties))
                 {
                     return;
                 }
                 //run the build task
-                var exitCode = Run(launcherPath, paramFileName);
+                var exitCode = Run(launcherPath, propsFilePath);
                 var runType = (RunType)Enum.Parse(typeof(RunType), properties[RUN_TYPE]);
-                bool hasResults = HasResults(resultsFileName, out string xmlResults);
+                bool hasResults = HasResults(resultsFilePath, out string xmlResults);
                 if (!hasResults)
                 {
                     ErrorCategory categ = exitCode == LauncherExitCode.AlmNotConnected ? ErrorCategory.ConnectionError : ErrorCategory.InvalidData;
@@ -143,7 +145,7 @@ namespace PSModule
                     RunStatus runStatus = RunStatus.FAILED;
                     if (CollateResults(xmlResults, resdir))
                     {
-                        var listReport = H.ReadReportFromXMLFile(resultsFileName, false, out _, _isParallelRunnerMode);
+                        var listReport = H.ReadReportFromXMLFile(resultsFilePath, false, out _, _isParallelRunnerMode);
                         //create html report
                         if (runType == RunType.FileSystem && properties[UPLOAD_ARTIFACT] == YES)
                         {
@@ -555,6 +557,5 @@ namespace PSModule
                 }
             }
         }
-
     }
 }

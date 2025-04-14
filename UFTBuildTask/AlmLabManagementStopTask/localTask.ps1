@@ -10,6 +10,7 @@
 # 
 
 $uftworkdir = $env:UFT_LAUNCHER
+Import-Module "$uftworkdir\bin\PSModule.dll" -ErrorAction Stop
 
 # $env:SYSTEM can be used also to determine the pipeline type "build" or "release"
 if ($env:SYSTEM_HOSTTYPE -eq "build") {
@@ -18,8 +19,6 @@ if ($env:SYSTEM_HOSTTYPE -eq "build") {
 	$buildNumber = $env:RELEASE_RELEASEID
 }
 $resDir = Join-Path $uftworkdir -ChildPath "res\Report_$buildNumber"
-
-Import-Module $uftworkdir\bin\PSModule.dll
 
 $retcodefile = "$resDir\StopRunReturnCode.txt"
 
@@ -40,10 +39,10 @@ if (Test-Path $retcodefile) {
 			Write-Host "Task completed successfully."
 		}
 
-		if ($retcode -eq -3) {
-			Write-Error "Task Failed with message: Closed by user"
-		} elseif ($retcode -ne 0) {
+		if ($retcode -eq -1) {
 			Write-Error "Task Failed"
+		} elseif ($retcode -eq -9) {
+			Write-Warning "Task completed with no action needed."
 		}
 	} else {
 		Write-Error "The file [$retcodefile] is empty!"
