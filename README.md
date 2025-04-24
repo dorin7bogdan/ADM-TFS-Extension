@@ -18,8 +18,8 @@ After the build is complete, you can view comprehensive test results.
 - JRE installed (required only if use the "OpenText Functional Testing ALM Lab Environment Preparation" task)
 
 #### Setup
-1. From [Visual Studio Marketplace][marketplace]: Install the **OpenText Functional Testing Azure DevOps extension** for the relevant organization
-2. On our [GitHub][repository]: Navigate to a specific release (latest: **24.2.0**)
+1. From [Visual Studio Marketplace][marketplace]: Install the **OpenText™ Functional Testing Azure DevOps extension** for the relevant organization
+2. On our [GitHub][repository]: Navigate to a specific release (latest: **25.2.0**)
 3. From [Azure DevOps][azure-devops]: Navigate to **agent pools** and set up an agent (interactive or run as a service) 
 4. On your agent machine:    
 4.1. Download the resources provided by a specific release (UFT.zip & unpack.ps1)    
