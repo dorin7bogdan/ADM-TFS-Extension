@@ -4,6 +4,18 @@ This extension enables you to run Functional Testing tests as part of your Azure
 • When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
 After the build is complete, you can view comprehensive test results. 
 
+# What's new in OpenText™ Functional Testing Azure DevOps extension - version 25.2
+##### Release date: April 2025
+- Rebranding the OpenText™ family products
+  - Digital Lab is now OpenText™ Functional Testing Lab for Mobile and Web
+  - UFT One is now OpenText™ Functional Testing
+  - Application Lifecycle Management is now OpenText™ Application Quality Management
+  - LoadRunner Enterprise is now OpenText™ Enterprise Performance Engineering
+- [FS] Generate JUnit report option
+- [FS] Normalize test paths to prevent exceeding the maximum length
+- [ALM Lab Mgmt] Improve ALM Lab Management task to correctly handle the Cancel pipeline action, and stop the test execution
+- Bug fixing, code enhancements and optimizations
+
 # What's new in UFT One Azure DevOps extension - version 24.2
 ##### Release date: April 2024
 - Update ADO extension to use FTToolsLauncher instead of HpToolsLauncher
@@ -83,8 +95,12 @@ This plugin update includes the following:
 - More information is available [here][alm-docs]
 
 ##### OpenText Functional Testing ALM Lab Management Run
-- Use this task to run ALM server-side functional test setssuites.
+- Use this task to run ALM server-side functional test-sets or build-verification-suites.
 - More information is available [here][alm-lab-docs]
+
+##### OpenText Functional Testing ALM Lab Management Stop Run
+- Use this task to stop ALM server-side functional test-sets or build-verification-suites.
+- More information is available [here][stop-alm-lab-docs]
 
 ##### OpenText Functional Testing ALM Lab Environment Preparation
 - Use this task to assign values to AUT Environment Configurations located in ALM.
@@ -113,6 +129,7 @@ For assistance or more information on configuring and using this extension, plea
    [fs-docs]:<https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-local.htm>
    [alm-docs]:<https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-alm.htm>
    [alm-lab-docs]:<https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-alm-lm.htm#mt-item-1>
+   [stop-alm-lab-docs]:<https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Default.htm#cshid=azure-stop-run>
    [alm-env-docs]:<https://admhelp.microfocus.com/uft/en/latest/UFT_Help/Content/UFT_Tools/Azure_DevOps_Extension/uft-azure-devops-run-alm-lm.htm#mt-item-0>
    [azure-devops]:<https://dev.azure.com/>
    [azure-portal]:<http://portal.azure.com/>
