@@ -15,7 +15,7 @@ After the build is complete, you can view comprehensive test results.
 #### Prerequisites
 - OpenText Functional Testing (version >=**14.00**)
 - Powershell (version >=**5.1**)
-- JRE installed (required only if use the "UFT One ALM Lab Environment Preparation" task)
+- JRE installed (required only if use the "OpenText Functional Testing ALM Lab Environment Preparation" task)
 
 #### Setup
 1. From [Visual Studio Marketplace][marketplace]: Install the **OpenText Functional Testing Azure DevOps extension** for the relevant organization
