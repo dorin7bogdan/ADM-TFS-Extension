@@ -168,7 +168,8 @@ namespace PSModule
 
                 propsFilePath = Path.Combine(propsDir, $"{PROPS}{timestamp}.txt");
                 resultsFilePath = Path.Combine(_resDir, $"{RESULTS}{timestamp}.xml");
-                _privateKey = H.GenerateAndSavePrivateKey(_resDir, out kvFilePath);
+                byte[] privateKey = H.GenerateAndSavePrivateKey(_resDir, out kvFilePath);
+                Aes256Encrypter.Create(privateKey);
 
                 Dictionary<string, string> properties;
                 try

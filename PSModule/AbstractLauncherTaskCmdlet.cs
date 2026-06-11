@@ -68,7 +68,6 @@ namespace PSModule
         protected CloudBrowserConfig _cloudBrowserConfig;
         protected ParallelRunnerConfig _parallelRunnerConfig;
         protected string _timestampPattern;
-        protected byte[] _privateKey;
 
         protected AbstractLauncherTaskCmdlet() { }
 
