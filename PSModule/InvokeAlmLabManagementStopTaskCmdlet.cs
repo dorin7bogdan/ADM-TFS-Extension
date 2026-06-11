@@ -47,7 +47,7 @@ namespace PSModule
                 string propsDir = Path.GetFullPath(Path.Combine(ufttfsdir, PROPS));
                 if (Directory.Exists(resDir))
                 {
-                    byte[] privateKey = H.GetPrivateKey(resDir, out kvFilePath);
+                    kvFilePath = Path.Combine(resDir, C._RANDOM_KEY_TMP);
                     string lastRunId = GetLastRunId(resDir);
                     string jobStatus = Environment.GetEnvironmentVariable(C.AGENT_JOBSTATUS);
                     WriteVerbose($"AGENT_JOBSTATUS = {jobStatus}");
@@ -65,7 +65,7 @@ namespace PSModule
                             {
                                 JavaProperties ciParams = [];
                                 ciParams.Load(propsFilePath);
-                                if (DoStopLastRun(lastRunId, ciParams, privateKey))
+                                if (DoStopLastRun(lastRunId, ciParams, resDir))
                                 {
                                     runIdFilePath = Path.Combine(resDir, $"{lastRunId}.runid");
                                     runStatus = RunStatus.PASSED;
@@ -127,7 +127,7 @@ namespace PSModule
             return null;
         }
 
-        private bool DoStopLastRun(string runId, JavaProperties ciParams, byte[] privateKey)
+        private bool DoStopLastRun(string runId, JavaProperties ciParams, string resDir)
         {
             WriteVerbose($"Trying to stop the Run {runId} ...");
             string serverUrl = ciParams.GetOrDefault(L.ALMSERVERURL);
@@ -135,7 +135,8 @@ namespace PSModule
             string project = ciParams.GetOrDefault(L.ALMPROJECT);
             bool.TryParse(ciParams.GetOrDefault(L.SSOENABLED), out bool isSSO);
             string usernameOrClientId, passwordOrApiKey;
-            Aes256Encrypter.Create(privateKey);
+            H.ApplyPrivateKeyFromFile(resDir);
+            
             if (isSSO)
             {
                 usernameOrClientId = ciParams.GetOrDefault(L.ALMCLIENTID);

@@ -9,6 +9,7 @@
  * The information contained herein is subject to change without notice.
  */
 
+using PSModule.Common;
 using PSModule.Models;
 using PSModule.ParallelRunner.SDK.Entity;
 using System;
@@ -737,23 +738,22 @@ namespace PSModule
             return rounded;
         }
 
-        public static byte[] GetPrivateKey(string resDir, out string filePath)
+        public static void ApplyPrivateKeyFromFile(string resDir)
         {
-            filePath = Path.Combine(resDir, C._RANDOM_KEY_TMP);
+            string filePath = Path.Combine(resDir, C._RANDOM_KEY_TMP);
             if (File.Exists(filePath))
             {
-                return GetKeyFromFile(filePath);
+                byte[] key = GetKeyFromFile(filePath);
+                Aes256Encrypter.Create(key);
             }
-            filePath = null;
-            return null;
         }
 
-        public static byte[] GenerateAndSavePrivateKey(string path, out string filePath)
+        public static void GenerateSaveAndApplyPrivateKey(string path, out string filePath)
         {
             filePath = Path.Combine(path, C._RANDOM_KEY_TMP);
             byte[] key = GenerateAlphaNumericBytes(PRIVATE_KEY_LENGTH);
             SaveKeyToProtectedHiddenFile(filePath, key);
-            return key;
+            Aes256Encrypter.Create(key);
         }
 
         public static byte[] GenerateAlphaNumericBytes(int length)
