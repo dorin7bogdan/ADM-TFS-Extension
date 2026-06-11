@@ -168,7 +168,7 @@ namespace PSModule
 
                 propsFilePath = Path.Combine(propsDir, $"{PROPS}{timestamp}.txt");
                 resultsFilePath = Path.Combine(_resDir, $"{RESULTS}{timestamp}.xml");
-                H.GenerateSaveAndApplyPrivateKey(_resDir, out kvFilePath);
+                H.GenerateAndSavePrivateKey(_resDir, out kvFilePath);
 
                 Dictionary<string, string> properties;
                 try

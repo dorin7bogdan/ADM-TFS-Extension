@@ -748,26 +748,12 @@ namespace PSModule
             }
         }
 
-        public static void GenerateSaveAndApplyPrivateKey(string path, out string filePath)
+        public static void GenerateAndSavePrivateKey(string path, out string filePath)
         {
+            Aes256Encrypter.Create();
             filePath = Path.Combine(path, C._RANDOM_KEY_TMP);
-            byte[] key = GenerateAlphaNumericBytes(PRIVATE_KEY_LENGTH);
+            byte[] key = Aes256Encrypter.GetPrivateKey();
             SaveKeyToProtectedHiddenFile(filePath, key);
-            Aes256Encrypter.Create(key);
-        }
-
-        public static byte[] GenerateAlphaNumericBytes(int length)
-        {
-            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-            StringBuilder result = new(length);
-            for (int i = 0; i < length; i++)
-            {
-                byte[] buffer = new byte[1];
-                rng.GetBytes(buffer);
-                int index = buffer[0] % AlphaNumericChars.Length;
-                result.Append(AlphaNumericChars[index]);
-            }
-            return Encoding.UTF8.GetBytes(result.ToString());
         }
 
         public static void SaveKeyToProtectedHiddenFile(string filePath, byte[] secureKey)
