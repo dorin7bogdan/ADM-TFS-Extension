@@ -4,6 +4,33 @@ This extension enables you to run Functional Testing tests as part of your Azure
 • When running tests from ALM Lab Management, you can also include a build step that prepares the test environment before running the tests.    
 After the build is complete, you can view comprehensive test results. 
 
+# What's new in OpenText™ Functional Testing Azure DevOps extension - version 26.3.0
+##### Release date: July 2026
+
+## New Features
+
+- **Run OpenText™ Functional Testing as Different User** - Execute UFT with specified credentials in Azure DevOps pipelines
+- **Workspace ID Support** - Added "Workspace ID" field to `Run From File System` and `Get Lab Resources` tasks
+- **Test Set Execution Order Control** - Choose to order ALM Test Sets by `name` or `ID` during execution
+- **Enhanced Get Lab Resources Task** - Two new resource retrieval options:
+  - **Workspaces** - retrieve available `workspaces`
+  - **All resources** - retrieve `devices`, `applications`, `workspaces`, and `cloud browsers`
+
+## Security Enhancements
+
+- **Improved Encryption** - Upgraded to AES-256-CBC with:
+  - Randomly generated IVs
+  - HMAC-SHA256 authentication tags
+  - Dynamic key generation via secure stdin passing
+  - Constant-time HMAC validation
+
+## Updates
+
+- C# language version: 13
+- Task versions updated (`Run From File System`: 8.0.0, `Run From ALM`: 6.0.0, `Get Lab Resources`: 6.0.0)
+- Improved Device specification field help text
+- Copyright updated to 2016-2026 Open Text
+
 # What's new in OpenText™ Functional Testing Azure DevOps extension - version 25.2.1
 ##### Release date: May 2025
 - Restored the missing Extensions tab

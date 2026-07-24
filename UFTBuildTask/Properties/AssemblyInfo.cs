@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("OpenText")]
 [assembly: AssemblyProduct("UFTBuildTask")]
-[assembly: AssemblyCopyright("Copyright 2016-2025 Open Text")]
+[assembly: AssemblyCopyright("Copyright 2016-2026 Open Text")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
